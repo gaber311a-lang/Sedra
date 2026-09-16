@@ -26,6 +26,7 @@ html {
 
 body {
   margin: 0;
+  padding-bottom: env(safe-area-inset-bottom);
   font-family: var(--font-ar);
   font-size: 1.0625rem;
   line-height: 1.75;
@@ -79,7 +80,7 @@ a {
 .header-inner {
   max-width: var(--max);
   margin: 0 auto;
-  padding: 0.75rem var(--space);
+  padding: max(0.75rem, env(safe-area-inset-top)) var(--space) 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -662,7 +663,7 @@ html[dir="rtl"] .field select {
 .site-footer {
   background: color-mix(in srgb, var(--forest) 94%, #000);
   border-top: 1px solid color-mix(in srgb, var(--stroke) 18%, transparent);
-  padding: calc(var(--space) * 2) var(--space) calc(var(--space) * 2.5);
+  padding: calc(var(--space) * 2) var(--space) calc(var(--space) * 2.5 + env(safe-area-inset-bottom));
   text-align: center;
   color: var(--sage);
 }
@@ -841,16 +842,48 @@ html[dir="rtl"] .field select {
   letter-spacing: 0.04em;
   opacity: 0.85;
 }
-.quality { background: var(--forest); color: var(--sage); }
-.quality .section-head h2 { color: var(--sage); }
-.quality .section-lead { color: color-mix(in srgb, var(--sage) 78%, transparent); }
-.quality .eyebrow { color: color-mix(in srgb, var(--sage) 70%, transparent); }
+
+/* Quality / purity — forest panel */
+.quality {
+  background: var(--forest);
+  color: var(--sage);
+}
+
+.quality .section-head h2 {
+  color: var(--sage);
+}
+
+.quality .section-lead {
+  color: color-mix(in srgb, var(--sage) 78%, transparent);
+}
+
+.quality .eyebrow {
+  color: color-mix(in srgb, var(--sage) 70%, transparent);
+}
+
 .quality .trust-item {
   background: color-mix(in srgb, var(--sage) 6%, transparent);
   border: 1px solid color-mix(in srgb, var(--stroke) 28%, transparent);
   border-radius: var(--radius);
   padding: 1.5rem 1.25rem;
 }
-.quality .trust-item h3 { color: var(--sage); }
-.quality .trust-item p { color: color-mix(in srgb, var(--sage) 78%, transparent); }
-.quality .trust-num { color: var(--stroke); }
+
+.quality .trust-item h3 {
+  color: var(--sage);
+}
+
+.quality .trust-item p {
+  color: color-mix(in srgb, var(--sage) 78%, transparent);
+}
+
+.quality .trust-num {
+  color: var(--stroke);
+}
+
+/* iPhone tap targets / overflow */
+@supports (padding: max(0px)) {
+  .btn,
+  .nav-toggle {
+    touch-action: manipulation;
+  }
+}
