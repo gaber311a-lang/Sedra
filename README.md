@@ -4,4 +4,4 @@
 
 Quiet-luxury marketing site — Arabic RTL, mobile-first. Brand lock in `BRAND.md`.
 
-**Live:** https://gaber311a-lang.github.io/Sedra/
+**Live:** https://gaber311a-lang.github.io/sedra/
