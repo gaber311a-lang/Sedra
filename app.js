@@ -89,9 +89,13 @@
       headers,
     });
     if (res.status === 401) {
+      clearAuthToken();
       session = null;
       guildId = null;
-      go("#/login");
+      // Don't force /login on refresh — stay/go home; user clicks دخول when ready
+      if ((location.hash || "").includes("servers") || (location.hash || "").includes("/g/")) {
+        history.replaceState({}, "", location.pathname + "#/");
+      }
       throw Object.assign(new Error("401"), { code: "401" });
     }
     if (res.status === 403) {
@@ -219,6 +223,7 @@
     if (r.screen === "landing") return showScreen("landing");
     if (r.screen === "login") {
       if (session) return go("#/servers");
+      // Allow login screen only when user navigates there intentionally
       return showScreen("login");
     }
     if (r.screen === "forbidden") return showScreen("forbidden");
@@ -374,7 +379,13 @@
       }
       applyRoute();
     } catch (_) {
+      clearAuthToken();
       session = null;
+      guildId = null;
+      const h = location.hash || "#/";
+      if (h.startsWith("#/login") || h.startsWith("#/servers") || h.includes("/g/")) {
+        history.replaceState({}, "", location.pathname + "#/");
+      }
       applyRoute();
     }
   }
@@ -979,6 +990,14 @@
     if (q.get("error")) {
       toast("ما تم الدخول. حاول مرة ثانية.");
       history.replaceState({}, "", location.pathname + location.hash);
+    }
+  } catch (_) {}
+  // Fresh load: don't trap guests on /login
+  try {
+    const h = location.hash || "#/";
+    const hasToken = !!getAuthToken();
+    if (!hasToken && (h === "#/login" || h.startsWith("#/login?"))) {
+      history.replaceState({}, "", location.pathname + "#/");
     }
   } catch (_) {}
   bind();
