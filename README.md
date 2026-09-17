@@ -1,34 +1,30 @@
 # Ops
 
-لوحة تحكم عربية (RTL) متعددة الشاشات لبوت تذاكر ديسكورد — طراز ProBot، بنفسجي متدرج.
+لوحة تحكم عربية (RTL) لبوت تذاكر ديسكورد.
 
 **Live:** https://gaber311a-lang.github.io/ops/
 
-## شاشات منفصلة (hash)
+## الشاشات
 
 | Hash | الشاشة |
 |------|--------|
-| `#/` | هبوط تسويقي فقط |
-| `#/login` | دخول Discord |
-| `#/servers` | شبكة السيرفرات |
+| `#/` | الصفحة الرئيسية |
+| `#/login` | دخول ديسكورد |
+| `#/servers` | سيرفراتك |
 | `#/g/:id/overview` | نظرة عامة |
 | `#/g/:id/tickets` | التذاكر |
-| `#/g/:id/panel` | المنبر + نشر |
+| `#/g/:id/panel` | المنبر |
 | `#/g/:id/roles` | الرتب والصلاحيات |
-| `#/g/:id/smart` | الإعدادات الذكية |
+| `#/g/:id/smart` | سلوك التذاكر |
 | `#/g/:id/logs` | السجل |
 
-## API (Railway)
+## الربط (Railway)
 
 ```js
 window.OPS_API_BASE = "https://ticket-ops-api-production.up.railway.app";
 ```
 
-- Login → `/auth/discord`
-- Invite → `/invite`
-- Guilds/settings/panel → `/api/guilds...`
-
-**جابر:** أضف Redirect URI في Discord Portal:
+أضف Redirect URI في Discord Portal:
 `https://ticket-ops-api-production.up.railway.app/auth/discord/callback`
 
-الأونر فقط يعدّل الإعدادات. أزرار العلامة التجارية بنفسجية متدرجة؛ أزرق Discord لزر الدخول/الدعوة فقط.
+تعديل الإعدادات لصاحب السيرفر فقط. أزرار العلامة بنفسجية؛ أزرق ديسكورد لزر الدخول والدعوة فقط.

@@ -2,124 +2,70 @@
   "use strict";
 
   const CFG = window.OPS_CONFIG || {};
-  const STORE_KEY = "ops-multiscreen-v1";
   const MOD_TITLES = {
     overview: "نظرة عامة",
     tickets: "التذاكر",
     panel: "المنبر",
     roles: "الرتب",
-    smart: "الذكي",
+    smart: "السلوك",
     logs: "السجل",
   };
-
-  const MOCK_USER = { id: "1", username: "Gaber", global_name: "جابر" };
-  const MOCK_GUILDS = [
-    { id: "111", name: "سيرفر جابر", owner: true, botPresent: true },
-    { id: "222", name: "مجتمع الدعم", owner: true, botPresent: true },
-    { id: "333", name: "متجر تجريبي", owner: true, botPresent: false },
-    { id: "444", name: "سيرفر صديق", owner: false, botPresent: true },
-  ];
-
-  const defaultSettings = () => ({
-    panel: {
-      title: "مركز التذاكر",
-      color: "#7C3AED",
-      desc: "اختر التصنيف وافتح تذكرة.",
-      welcome: "مرحباً بك. صف طلبك بوضوح.",
-      channelId: "",
-      categoryId: "",
-      categories: [
-        { name: "دعم فني", key: "support", color: "#5B4DFF" },
-        { name: "مبيعات", key: "sales", color: "#A855F7" },
-        { name: "شكوى", key: "complaint", color: "#F59E0B" },
-        { name: "عامة", key: "general", color: "#8B5CF6" },
-      ],
-    },
-    roles: { owner: "", member: "", support: "", admin: "" },
-    smart: {
-      auto: true,
-      suggest: true,
-      one: true,
-      idle: true,
-      close: true,
-      sla: true,
-      idleMin: 30,
-      closeMin: 120,
-      slaMin: 15,
-      prio: "medium",
-    },
-    perms: {},
-    audit: [],
-  });
-
-  const TICKETS = [
-    { id: "TKT-0013", cat: "مبيعات", prio: "high", status: "open", who: "—", ago: "8 د" },
-    { id: "TKT-0012", cat: "دعم فني", prio: "medium", status: "claimed", who: "نورة", ago: "12 د" },
-    { id: "TKT-0011", cat: "شكوى", prio: "high", status: "claimed", who: "فهد", ago: "22 د" },
-    { id: "TKT-0010", cat: "عامة", prio: "low", status: "open", who: "—", ago: "35 د" },
-    { id: "TKT-0009", cat: "دعم فني", prio: "medium", status: "closed", who: "سارة", ago: "1 س" },
-  ];
-  const STATUS_AR = { open: "مفتوحة", claimed: "مُستلمة", closed: "مغلقة" };
-  const PRIO_AR = { high: "عالية", medium: "متوسطة", low: "منخفضة" };
-  const PERM_ITEMS = [
-    { id: "cmd_open", label: "/ticket فتح" },
-    { id: "cmd_close", label: "/ticket إغلاق" },
-    { id: "cmd_claim", label: "/ticket استلام" },
-    { id: "btn_open", label: "زر فتح" },
-    { id: "btn_close", label: "زر إغلاق" },
-    { id: "btn_claim", label: "زر استلام" },
-  ];
-  const PERM_ROLES = ["everyone", "member", "support", "admin"];
 
   const $ = (id) => document.getElementById(id);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  let store = loadStore();
   let session = null;
   let guildId = null;
   let ticketFilter = "all";
+  let lastTickets = [];
+
+  // Purge legacy mock flags from older builds
+  try {
+    sessionStorage.removeItem("ops-mock");
+    ["ops-mock", "ops-multiscreen-v1", "ops-pro-v1", "ops-screens-v1", "ops-multi-v2", "ops-dashboard-v1", "ops-multi-v1"].forEach((k) =>
+      localStorage.removeItem(k)
+    );
+  } catch (_) {}
 
   function apiBase() {
     return String(window.OPS_API_BASE || CFG.API_BASE || "").replace(/\/$/, "");
   }
-  function rpath(key, id) {
+  function route(key, id) {
     let p = (CFG.routes && CFG.routes[key]) || "";
-    if (id) p = p.replace(":guildId", id);
+    if (id) p = p.replace(/:guildId/g, encodeURIComponent(id));
     return p;
   }
+
   async function api(path, opts = {}) {
     const base = apiBase();
-    if (!base) throw new Error("NO_API");
+    if (!base) throw Object.assign(new Error("NO_API"), { code: "NO_API" });
     const res = await fetch(base + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
       ...opts,
     });
+    if (res.status === 401) {
+      session = null;
+      guildId = null;
+      go("#/login");
+      throw Object.assign(new Error("401"), { code: "401" });
+    }
     if (res.status === 403) {
-      location.hash = "#/forbidden";
-      throw new Error("403");
+      go("#/forbidden");
+      throw Object.assign(new Error("403"), { code: "403" });
     }
-    if (!res.ok) throw new Error("API " + res.status);
+    if (res.status === 404 || res.status === 501) {
+      throw Object.assign(new Error("UNAVAILABLE"), { code: "UNAVAILABLE", status: res.status });
+    }
+    if (!res.ok) throw Object.assign(new Error("API " + res.status), { code: "API", status: res.status });
     if (res.status === 204) return null;
-    return res.json();
-  }
-
-  function loadStore() {
+    const text = await res.text();
+    if (!text) return null;
     try {
-      const raw = localStorage.getItem(STORE_KEY);
-      const base = { guilds: {}, lastGuildId: null };
-      return raw ? Object.assign(base, JSON.parse(raw)) : base;
+      return JSON.parse(text);
     } catch {
-      return { guilds: {}, lastGuildId: null };
+      return null;
     }
-  }
-  function saveStore() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  }
-  function settings(id = guildId) {
-    if (!id) return defaultSettings();
-    if (!store.guilds[id]) store.guilds[id] = defaultSettings();
-    return store.guilds[id];
   }
 
   function toast(msg) {
@@ -130,24 +76,66 @@
     clearTimeout(toast._t);
     toast._t = setTimeout(() => {
       el.hidden = true;
-    }, 2800);
+    }, 3200);
   }
   function esc(s) {
-    return String(s).replace(/[&<>"']/g, (c) =>
+    return String(s ?? "").replace(/[&<>"']/g, (c) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
     );
   }
-  function addAudit(type, text) {
-    if (!guildId) return;
-    const s = settings();
-    s.audit.unshift({ type, text, at: new Date().toISOString() });
-    s.audit = s.audit.slice(0, 50);
-    saveStore();
-    renderLogs();
-    renderFeed();
+
+  function normalizeUser(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const u = raw.user || raw.me || raw;
+    if (!u.id && !u.username) return null;
+    return {
+      id: String(u.id || ""),
+      username: u.username || "",
+      global_name: u.global_name || u.globalName || u.display_name || u.username || "",
+      avatar: u.avatar || null,
+    };
   }
 
-  /* ===== Hash router — one full screen ===== */
+  function normalizeGuild(g) {
+    if (!g || typeof g !== "object") return null;
+    const id = String(g.id || g.guildId || g.guild_id || "");
+    const name = g.name || g.guildName || g.guild_name || "";
+    if (!id || !name) return null;
+    const icon = g.icon || g.iconHash || g.icon_hash || null;
+    const iconUrl =
+      g.iconUrl ||
+      g.icon_url ||
+      g.iconURL ||
+      (icon ? `https://cdn.discordapp.com/icons/${id}/${icon}.webp?size=128` : null);
+    const owner = g.owner === true || g.isOwner === true || g.is_owner === true;
+    const botPresent =
+      g.botPresent === true ||
+      g.bot_present === true ||
+      g.hasBot === true ||
+      g.has_bot === true ||
+      g.joined === true;
+    return { id, name, icon, iconUrl, owner, botPresent };
+  }
+
+  function normalizeGuildList(payload) {
+    let arr = [];
+    if (Array.isArray(payload)) arr = payload;
+    else if (payload && Array.isArray(payload.guilds)) arr = payload.guilds;
+    else if (payload && Array.isArray(payload.data)) arr = payload.data;
+    else if (payload && Array.isArray(payload.items)) arr = payload.items;
+    else if (payload && Array.isArray(payload.servers)) arr = payload.servers;
+    return arr.map(normalizeGuild).filter(Boolean);
+  }
+
+  function guildIconHtml(g) {
+    const alt = esc(g.name || "سيرفر");
+    if (g.iconUrl) {
+      return `<img class="server-icon-img" src="${esc(g.iconUrl)}" alt="${alt}" width="70" height="70" loading="lazy" decoding="async" />`;
+    }
+    return `<div class="server-icon" aria-hidden="true">${esc((g.name || "?").trim().slice(0, 1))}</div>`;
+  }
+
+  /* -------- Router -------- */
   function parseHash() {
     const raw = (location.hash || "#/").replace(/^#/, "") || "/";
     const parts = raw.split("/").filter(Boolean);
@@ -171,9 +159,8 @@
     ["landing", "login", "servers", "guild", "forbidden"].forEach((n) => {
       const el = $("screen-" + n);
       if (!el) return;
-      const on = n === name;
-      el.hidden = !on;
-      el.classList.toggle("is-active", on);
+      el.hidden = n !== name;
+      el.classList.toggle("is-active", n === name);
     });
     window.scrollTo(0, 0);
     closeSide();
@@ -181,56 +168,205 @@
 
   function applyRoute() {
     const r = parseHash();
-
-    if (r.screen === "landing") {
-      showScreen("landing");
-      return;
-    }
+    if (r.screen === "landing") return showScreen("landing");
     if (r.screen === "login") {
       if (session) return go("#/servers");
-      showScreen("login");
-      return;
+      return showScreen("login");
     }
-    if (r.screen === "forbidden") {
-      showScreen("forbidden");
-      return;
-    }
+    if (r.screen === "forbidden") return showScreen("forbidden");
     if (r.screen === "servers") {
       if (!session) return go("#/login");
       showScreen("servers");
-      renderServers();
-      return;
+      return loadAndRenderGuilds();
     }
     if (r.screen === "guild") {
       if (!session) return go("#/login");
-      const g = session.guilds.find((x) => x.id === r.guildId);
+      const g = (session.guilds || []).find((x) => x.id === r.guildId);
       if (!g) return go("#/servers");
       if (!g.owner) return go("#/forbidden");
       if (!g.botPresent) {
-        toast("أضف البوت لهذا السيرفر أولاً");
+        toast("أضف البوت لهذا السيرفر أول");
         return go("#/servers");
       }
       guildId = r.guildId;
-      store.lastGuildId = guildId;
-      saveStore();
       showScreen("guild");
-      paintGuild(g);
-      showMod(r.mod || "overview");
+      paintGuildChrome(g);
+      showMod(r.mod);
+      return loadGuildModuleData(r.mod);
     }
   }
 
-  function paintGuild(g) {
-    $("side-guild-name").textContent = g.name;
-    $("side-guild-icon").textContent = (g.name || "S").slice(0, 1);
-    $("guild-chip").textContent = g.name;
+  /* -------- Auth -------- */
+  function setUserChrome(user) {
+    if ($("user-label")) $("user-label").textContent = user.global_name || user.username || "مستخدم";
+    if ($("user-avatar")) $("user-avatar").textContent = (user.global_name || user.username || "?").slice(0, 1);
+    if ($("mode-chip")) $("mode-chip").textContent = "متصل";
+  }
+
+  function loginDiscord() {
+    const base = apiBase();
+    if (!base) return toast("الخدمة مو متصلة");
+    window.location.href = base + (route("login") || "/auth/discord");
+  }
+
+  async function inviteBot() {
+    const base = apiBase();
+    if (!base) return toast("الخدمة مو متصلة");
+    try {
+      const res = await fetch(base + (route("invite") || "/invite"), { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+    } catch (_) {}
+    if (typeof CFG.inviteUrl === "function" && CFG.DISCORD_CLIENT_ID) {
+      window.location.href = CFG.inviteUrl(CFG.DISCORD_CLIENT_ID);
+      return;
+    }
+    toast("ما قدرنا نفتح دعوة البوت");
+  }
+
+  async function logout() {
+    if (apiBase()) {
+      try {
+        await api(route("logout") || "/auth/logout", { method: "POST" });
+      } catch (_) {}
+    }
+    session = null;
+    guildId = null;
+    go("#/");
+  }
+
+  async function restoreSession() {
+    if (!apiBase()) {
+      applyRoute();
+      return;
+    }
+    try {
+      const meRaw = await api(route("me") || "/auth/me");
+      const user = normalizeUser(meRaw);
+      if (!user) throw new Error("NO_USER");
+      session = { user, guilds: [] };
+      setUserChrome(user);
+      const r = parseHash();
+      if (r.screen === "servers" || r.screen === "guild") {
+        try {
+          await fetchGuilds();
+        } catch (_) {}
+      }
+      applyRoute();
+    } catch (_) {
+      session = null;
+      applyRoute();
+    }
+  }
+
+  async function fetchGuilds() {
+    const raw = await api(route("guilds") || "/api/guilds");
+    const list = normalizeGuildList(raw).filter((g) => g.owner);
+    if (!session) session = { user: { username: "?" }, guilds: [] };
+    session.guilds = list;
+    return list;
+  }
+
+  function setServersError(msg) {
+    const box = $("servers-error");
+    const text = $("servers-error-text");
+    if (!box) return;
+    if (!msg) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    if (text) text.textContent = msg;
+  }
+
+  async function loadAndRenderGuilds() {
+    const grid = $("server-grid");
+    if (grid) grid.innerHTML = '<p class="empty">يحمّل السيرفرات…</p>';
+    setServersError(null);
+    try {
+      await fetchGuilds();
+      renderServers();
+    } catch (_) {
+      if (grid) grid.innerHTML = "";
+      setServersError("ما قدرنا نحمّل السيرفرات. تأكد إنك داخل وأعد المحاولة.");
+    }
+  }
+
+  function renderServers() {
+    const grid = $("server-grid");
+    if (!grid || !session) return;
+    const guilds = session.guilds || [];
+    const tiles = guilds
+      .map((g) => {
+        const badge = g.botPresent
+          ? '<span class="badge ok">جاهز</span>'
+          : '<span class="badge warn">البوت مو موجود</span>';
+        const action = g.botPresent
+          ? `<a class="btn btn-grad btn-sm" href="#/g/${esc(g.id)}/overview">فتح</a>`
+          : `<button type="button" class="btn btn-discord btn-sm" data-inv>إضافة البوت</button>`;
+        return `<article class="server-tile ${g.botPresent ? "" : "dim"}">
+          ${guildIconHtml(g)}
+          <strong>${esc(g.name)}</strong>
+          ${badge}${action}
+        </article>`;
+      })
+      .join("");
+
+    const addTile = `<article class="server-tile server-tile-add" id="tile-add-server" role="button" tabindex="0">
+      <div class="server-icon add-plus" aria-hidden="true">+</div>
+      <strong>إضافة سيرفر</strong>
+      <span class="badge ok">دعوة البوت</span>
+      <button type="button" class="btn btn-discord btn-sm" data-invite-new>إضافة البوت</button>
+    </article>`;
+
+    grid.innerHTML =
+      (tiles ||
+        '<p class="empty">ما فيه سيرفرات تملكها ظاهرة. اضغط إضافة سيرفر جديد لدعوة البوت.</p>') +
+      addTile;
+
+    grid.querySelectorAll("[data-inv], [data-invite-new]").forEach((b) => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        inviteBot();
+      };
+    });
+    const add = $("tile-add-server");
+    if (add) {
+      add.onclick = (e) => {
+        if (e.target.closest("button")) return;
+        inviteBot();
+      };
+      add.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          inviteBot();
+        }
+      };
+    }
+  }
+
+  /* -------- Guild chrome / modules -------- */
+  function paintGuildChrome(g) {
+    if ($("side-guild-name")) $("side-guild-name").textContent = g.name;
+    const icon = $("side-guild-icon");
+    if (icon) {
+      if (g.iconUrl) {
+        icon.innerHTML = `<img src="${esc(g.iconUrl)}" alt="${esc(g.name)}" width="40" height="40" />`;
+        icon.classList.add("has-img");
+      } else {
+        icon.textContent = (g.name || "S").slice(0, 1);
+        icon.classList.remove("has-img");
+      }
+    }
+    if ($("guild-chip")) $("guild-chip").textContent = g.name;
     $$(".side-link[data-mod]").forEach((a) => {
       a.href = `#/g/${g.id}/${a.dataset.mod}`;
     });
-    fillForms();
-    renderTickets();
-    renderLogs();
-    renderFeed();
-    tickStats();
   }
 
   function showMod(name) {
@@ -241,7 +377,7 @@
     $$(".side-link[data-mod]").forEach((a) => {
       a.classList.toggle("is-active", a.dataset.mod === name);
     });
-    $("mod-title").textContent = MOD_TITLES[name] || name;
+    if ($("mod-title")) $("mod-title").textContent = MOD_TITLES[name] || name;
   }
 
   function openSide() {
@@ -253,194 +389,155 @@
     if ($("sidebar-backdrop")) $("sidebar-backdrop").hidden = true;
   }
 
-  /* ===== Auth ===== */
-  function setUserChrome(user, mock) {
-    $("user-label").textContent = user.global_name || user.username || "مستخدم";
-    $("user-avatar").textContent = (user.global_name || user.username || "?").slice(0, 1);
-    $("mode-chip").textContent = mock ? "تجريبي" : "متصل · Railway";
-  }
-
-  function enterSession({ user, guilds, mock }) {
-    session = { user, guilds, mock };
-    if (mock) sessionStorage.setItem("ops-mock", "1");
-    setUserChrome(user, mock);
-    go("#/servers");
-    toast(mock ? "دخول تجريبي" : "تم تسجيل الدخول");
-  }
-
-  function loginDiscord() {
-    const base = apiBase();
-    if (!base) {
-      toast("OPS_API_BASE غير مضبوط");
-      return;
+  function markUnavailable(modEl, msg) {
+    if (!modEl) return;
+    let banner = modEl.querySelector(".unavailable-banner");
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.className = "unavailable-banner";
+      modEl.insertBefore(banner, modEl.firstChild);
     }
-    window.location.href = base + (rpath("login") || "/auth/discord");
+    banner.textContent = msg || "غير متاح حتى يكتمل الربط";
+    banner.hidden = false;
+    modEl.querySelectorAll("form, button[type=submit], #btn-publish-panel, #btn-save-perms").forEach((el) => {
+      el.setAttribute("data-disabled-by-api", "1");
+      if ("disabled" in el) el.disabled = true;
+      el.style.opacity = "0.45";
+      el.style.pointerEvents = "none";
+    });
+  }
+  function clearUnavailable(modEl) {
+    if (!modEl) return;
+    const banner = modEl.querySelector(".unavailable-banner");
+    if (banner) banner.hidden = true;
+    modEl.querySelectorAll('[data-disabled-by-api="1"]').forEach((el) => {
+      el.removeAttribute("data-disabled-by-api");
+      if ("disabled" in el) el.disabled = false;
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+    });
   }
 
-  async function inviteBot() {
-    const base = apiBase();
-    const fallback = () => {
-      const url =
-        CFG.inviteUrl?.(CFG.DISCORD_CLIENT_ID || "1550187468102438994") ||
-        "https://discord.com/api/oauth2/authorize?client_id=1550187468102438994&permissions=2147609616&scope=bot%20applications.commands";
-      window.location.href = url;
-    };
-    if (!base) {
-      fallback();
-      return;
-    }
+  function resetOverviewPlaceholders() {
+    ["st-open", "st-claimed", "st-closed", "st-sla"].forEach((id) => {
+      if ($(id)) $(id).textContent = "—";
+    });
+    if ($("ov-bot")) $("ov-bot").textContent = "—";
+    if ($("ov-smart")) $("ov-smart").textContent = "—";
+    if ($("ov-feed")) $("ov-feed").innerHTML = '<li class="muted">ما فيه نشاط بعد.</li>';
+  }
+
+  async function loadGuildModuleData(mod) {
+    resetOverviewPlaceholders();
+    if ($("tickets-body")) $("tickets-body").innerHTML = "";
+    if ($("audit-list")) $("audit-list").innerHTML = "";
+
+    // Settings (panel/roles/smart)
     try {
-      const res = await fetch(base + (rpath("invite") || "/invite"), {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data && data.url) {
-        window.location.href = data.url;
-        return;
+      const raw = await api(route("settings", guildId) || `/api/guilds/${guildId}/settings`);
+      const settings = (raw && (raw.settings || raw.data || raw)) || null;
+      if (settings) fillFormsFromApi(settings);
+      clearUnavailable($("mod-panel"));
+      clearUnavailable($("mod-roles"));
+      clearUnavailable($("mod-smart"));
+      if ($("ov-bot")) $("ov-bot").textContent = "متصل";
+    } catch (e) {
+      if (e.code !== "401" && e.code !== "403") {
+        markUnavailable($("mod-panel"), "غير متاح حتى يكتمل الربط");
+        markUnavailable($("mod-roles"), "غير متاح حتى يكتمل الربط");
+        markUnavailable($("mod-smart"), "غير متاح حتى يكتمل الربط");
       }
-    } catch (_) {}
-    fallback();
-  }
+    }
 
-  async function logout() {
-    if (apiBase()) {
+    if (mod === "tickets" || mod === "overview") {
       try {
-        await api(rpath("logout"), { method: "POST" });
-      } catch (_) {}
-    }
-    sessionStorage.removeItem("ops-mock");
-    session = null;
-    guildId = null;
-    go("#/");
-  }
-
-  async function restoreSession() {
-    if (apiBase()) {
-      try {
-        const me = await api(rpath("me"));
-        const g = await api(rpath("guilds"));
-        session = { user: me, guilds: g.guilds || g, mock: false };
-        setUserChrome(me, false);
-        applyRoute();
-        return;
-      } catch (_) {}
-    }
-    if (sessionStorage.getItem("ops-mock") === "1") {
-      session = {
-        user: MOCK_USER,
-        guilds: MOCK_GUILDS.map((g) => ({ ...g })),
-        mock: true,
-      };
-      setUserChrome(MOCK_USER, true);
-    }
-    applyRoute();
-  }
-
-  /* ===== Servers ===== */
-  function renderServers() {
-    const grid = $("server-grid");
-    if (!grid || !session) return;
-    grid.innerHTML =
-      session.guilds
-        .map((g) => {
-          let badge, action;
-          if (!g.owner) {
-            badge = '<span class="badge warn">لست الأونر</span>';
-            action = `<button type="button" class="btn btn-ghost btn-sm" data-deny>لا صلاحية</button>`;
-          } else if (!g.botPresent) {
-            badge = '<span class="badge warn">بدون بوت</span>';
-            action = `<button type="button" class="btn btn-discord btn-sm" data-inv="${g.id}">إضافة البوت</button>`;
-          } else {
-            badge = '<span class="badge ok">جاهز</span>';
-            action = `<a class="btn btn-grad btn-sm" href="#/g/${g.id}/overview">فتح التحكم</a>`;
-          }
-          return `<article class="server-tile ${g.owner && g.botPresent ? "" : "dim"}">
-            <div class="server-icon">${esc((g.name || "?").slice(0, 1))}</div>
-            <strong>${esc(g.name)}</strong>${badge}${action}</article>`;
-        })
-        .join("") || '<p class="empty">لا سيرفرات.</p>';
-
-    grid.querySelectorAll("[data-deny]").forEach((b) => {
-      b.onclick = () => go("#/forbidden");
-    });
-    grid.querySelectorAll("[data-inv]").forEach((b) => {
-      b.onclick = () => {
-        if (!apiBase()) {
-          const g = session.guilds.find((x) => x.id === b.dataset.inv);
-          if (g) {
-            g.botPresent = true;
-            renderServers();
-            toast("محاكاة إضافة البوت");
-            return;
-          }
-        }
-        inviteBot();
-      };
-    });
-  }
-
-  /* ===== Persist ===== */
-  async function persist(section) {
-    const g = session?.guilds.find((x) => x.id === guildId);
-    if (!g?.owner) {
-      go("#/forbidden");
-      return false;
-    }
-    saveStore();
-    if (apiBase()) {
-      try {
-        await api(rpath("settings", guildId), {
-          method: "PUT",
-          body: JSON.stringify({ section, settings: settings() }),
-        });
+        const t = await api(`/api/guilds/${guildId}/tickets`);
+        const list = Array.isArray(t) ? t : t?.tickets || t?.data || [];
+        lastTickets = list;
+        renderTickets(list);
+        if (mod === "overview") renderOverviewFromTickets(list);
+        clearUnavailable($("mod-tickets"));
       } catch (e) {
-        if (e.message === "403") return false;
-        toast("حُفظ محلياً — تعذّر المزامنة");
+        lastTickets = [];
+        if ($("tickets-body"))
+          $("tickets-body").innerHTML =
+            '<tr><td colspan="7" class="muted">غير متاح حتى يكتمل الربط</td></tr>';
+        if (e.code !== "401" && e.code !== "403") markUnavailable($("mod-tickets"), "غير متاح حتى يكتمل الربط");
+        if (mod === "overview" && $("ov-feed"))
+          $("ov-feed").innerHTML = '<li class="muted">غير متاح حتى يكتمل الربط</li>';
       }
     }
-    return true;
+
+    if (mod === "logs") {
+      try {
+        const logs = await api(`/api/guilds/${guildId}/logs`);
+        const list = Array.isArray(logs) ? logs : logs?.logs || logs?.data || [];
+        renderLogs(list);
+        clearUnavailable($("mod-logs"));
+      } catch (e) {
+        if ($("audit-list")) $("audit-list").innerHTML = '<li class="muted">غير متاح حتى يكتمل الربط</li>';
+        if (e.code !== "401" && e.code !== "403") markUnavailable($("mod-logs"), "غير متاح حتى يكتمل الربط");
+      }
+    }
+
+    if (mod === "overview") {
+      try {
+        const stats = await api(`/api/guilds/${guildId}/stats`);
+        if (stats) {
+          if ($("st-open")) $("st-open").textContent = stats.open ?? stats.openTickets ?? "—";
+          if ($("st-claimed")) $("st-claimed").textContent = stats.claimed ?? stats.claimedTickets ?? "—";
+          if ($("st-closed")) $("st-closed").textContent = stats.closedToday ?? stats.closed ?? "—";
+          if ($("st-sla")) $("st-sla").textContent = stats.sla ?? stats.slaPercent ?? "—";
+          if ($("ov-smart") && stats.smartEnabled != null)
+            $("ov-smart").textContent = stats.smartEnabled ? "شغّال" : "مطفى";
+        }
+      } catch (_) {}
+    }
   }
 
-  function setVal(id, v) {
-    const el = $(id);
-    if (el) el.value = v ?? "";
-  }
-  function setCheck(id, v) {
-    const el = $(id);
-    if (el) el.checked = !!v;
-  }
+  function fillFormsFromApi(s) {
+    const panel = s.panel || s.embed || {};
+    if ($("cfg-title") && panel.title != null) $("cfg-title").value = panel.title;
+    const color = panel.color || panel.embedColor;
+    if (color && $("cfg-color")) {
+      $("cfg-color").value = color;
+      if ($("cfg-hex")) $("cfg-hex").value = color;
+      updateGrad(color);
+    }
+    if ($("cfg-desc") && panel.desc != null) $("cfg-desc").value = panel.desc;
+    if ($("cfg-welcome") && (panel.welcome != null || panel.welcomeText != null))
+      $("cfg-welcome").value = panel.welcome || panel.welcomeText;
+    if ($("cfg-channel")) $("cfg-channel").value = panel.channelId || panel.panelChannel || "";
+    if ($("cfg-category")) $("cfg-category").value = panel.categoryId || panel.ticketCategory || "";
+    const cats = panel.categories || s.categories;
+    if (Array.isArray(cats)) renderCats(cats);
 
-  function fillForms() {
-    const s = settings();
-    const p = s.panel;
-    setVal("cfg-title", p.title);
-    setVal("cfg-color", p.color);
-    setVal("cfg-hex", p.color);
-    setVal("cfg-desc", p.desc);
-    setVal("cfg-welcome", p.welcome);
-    setVal("cfg-channel", p.channelId);
-    setVal("cfg-category", p.categoryId);
-    updateGrad(p.color);
-    renderCats();
-    setVal("role-owner", s.roles.owner);
-    setVal("role-member", s.roles.member);
-    setVal("role-support", s.roles.support);
-    setVal("role-admin", s.roles.admin);
-    const sm = s.smart;
-    setCheck("sm-auto", sm.auto);
-    setCheck("sm-suggest", sm.suggest);
-    setCheck("sm-one", sm.one);
-    setCheck("sm-idle", sm.idle);
-    setCheck("sm-close", sm.close);
-    setCheck("sm-sla", sm.sla);
-    setVal("sm-idle-min", sm.idleMin);
-    setVal("sm-close-min", sm.closeMin);
-    setVal("sm-sla-min", sm.slaMin);
-    setVal("sm-prio", sm.prio);
-    if ($("ov-smart")) $("ov-smart").textContent = sm.auto ? "مفعّل" : "متوقف";
-    if ($("ov-bot")) $("ov-bot").textContent = "متصل";
-    ensurePerms(s);
-    renderPerms();
+    const roles = s.roles || {};
+    if ($("role-owner")) $("role-owner").value = roles.owner || roles.ownerRoleId || "";
+    if ($("role-member")) $("role-member").value = roles.member || roles.memberRoleId || "";
+    if ($("role-support")) $("role-support").value = roles.support || roles.supportRoleId || "";
+    if ($("role-admin")) $("role-admin").value = roles.admin || roles.adminRoleId || "";
+
+    const sm = s.smart || s.behavior || {};
+    [
+      ["sm-auto", sm.auto ?? sm.autoreply],
+      ["sm-suggest", sm.suggest],
+      ["sm-one", sm.one ?? sm.oneTicket],
+      ["sm-idle", sm.idle ?? sm.idleWarn],
+      ["sm-close", sm.close ?? sm.autoClose],
+      ["sm-sla", sm.sla],
+    ].forEach(([id, v]) => {
+      if ($(id) && v != null) $(id).checked = !!v;
+    });
+    if ($("sm-idle-min") && (sm.idleMin || sm.idleWarnMin))
+      $("sm-idle-min").value = sm.idleMin || sm.idleWarnMin;
+    if ($("sm-close-min") && (sm.closeMin || sm.idleCloseMin))
+      $("sm-close-min").value = sm.closeMin || sm.idleCloseMin;
+    if ($("sm-sla-min") && (sm.slaMin || sm.slaTargetMin))
+      $("sm-sla-min").value = sm.slaMin || sm.slaTargetMin;
+    if ($("sm-prio") && sm.prio) $("sm-prio").value = sm.prio;
+
+    if (s.perms) renderPerms(s.perms);
   }
 
   function updateGrad(c) {
@@ -448,149 +545,227 @@
     if (el) el.style.background = `linear-gradient(135deg,#5B4DFF,${c},#A855F7)`;
   }
 
-  function renderCats() {
+  function renderCats(cats) {
     const list = $("cat-list");
     if (!list) return;
-    const cats = settings().panel.categories;
-    list.innerHTML = cats
+    list._cats = (cats || []).map((c) => ({ ...c }));
+    if (!list._cats.length) {
+      list.innerHTML = '<li class="muted">ما فيه تصنيفات بعد.</li>';
+      return;
+    }
+    list.innerHTML = list._cats
       .map(
         (c, i) => `<li class="cat-row">
-        <input type="color" value="${c.color}" data-i="${i}" data-f="color" />
-        <input type="text" value="${esc(c.name)}" data-i="${i}" data-f="name" />
-        <input type="text" class="en" dir="ltr" value="${esc(c.key)}" data-i="${i}" data-f="key" />
+        <input type="color" value="${esc(c.color || "#7C3AED")}" data-i="${i}" data-f="color" />
+        <input type="text" value="${esc(c.name || "")}" data-i="${i}" data-f="name" />
+        <input type="text" class="en" dir="ltr" value="${esc(c.key || "")}" data-i="${i}" data-f="key" />
         <button type="button" class="btn btn-ghost btn-sm" data-del="${i}">حذف</button>
       </li>`
       )
       .join("");
     list.querySelectorAll("input").forEach((inp) => {
       inp.onchange = () => {
-        settings().panel.categories[+inp.dataset.i][inp.dataset.f] = inp.value;
+        if (!list._cats[inp.dataset.i]) return;
+        list._cats[inp.dataset.i][inp.dataset.f] = inp.value;
       };
     });
     list.querySelectorAll("[data-del]").forEach((btn) => {
       btn.onclick = () => {
-        settings().panel.categories.splice(+btn.dataset.del, 1);
-        renderCats();
+        list._cats.splice(+btn.dataset.del, 1);
+        renderCats(list._cats);
       };
     });
   }
 
-  function ensurePerms(s) {
-    if (!s.perms || !Object.keys(s.perms).length) {
-      s.perms = {};
-      PERM_ITEMS.forEach((it) => {
-        s.perms[it.id] = {
-          everyone: it.id.includes("open"),
-          member: true,
-          support: true,
-          admin: true,
-        };
-      });
-    }
-  }
-  function renderPerms() {
+  function renderPerms(perms) {
     const body = $("perm-body");
     if (!body) return;
-    const s = settings();
-    ensurePerms(s);
-    body.innerHTML = PERM_ITEMS.map((it) => {
-      const row = s.perms[it.id] || {};
-      return `<tr><td>${it.label}</td>${PERM_ROLES.map(
-        (r) =>
-          `<td><input type="checkbox" data-perm="${it.id}" data-role="${r}" ${
-            row[r] ? "checked" : ""
-          } /></td>`
-      ).join("")}</tr>`;
-    }).join("");
+    const items = [
+      { id: "cmd_open", label: "/ticket فتح" },
+      { id: "cmd_close", label: "/ticket إغلاق" },
+      { id: "cmd_claim", label: "/ticket استلام" },
+      { id: "btn_open", label: "زر فتح" },
+      { id: "btn_close", label: "زر إغلاق" },
+      { id: "btn_claim", label: "زر استلام" },
+    ];
+    const roles = ["everyone", "member", "support", "admin"];
+    body.innerHTML = items
+      .map((it) => {
+        const row = (perms && perms[it.id]) || {};
+        return `<tr><td>${it.label}</td>${roles
+          .map(
+            (r) =>
+              `<td><input type="checkbox" data-perm="${it.id}" data-role="${r}" ${
+                row[r] ? "checked" : ""
+              }/></td>`
+          )
+          .join("")}</tr>`;
+      })
+      .join("");
   }
 
-  function renderTickets() {
-    const q = ($("ticket-q")?.value || "").trim().toLowerCase();
-    const rows = TICKETS.filter((t) => {
-      if (ticketFilter !== "all" && t.status !== ticketFilter) return false;
-      if (!q) return true;
-      return t.id.toLowerCase().includes(q) || t.cat.includes(q);
-    });
+  function renderTickets(list) {
     const body = $("tickets-body");
     if (!body) return;
-    body.innerHTML = rows
-      .map(
-        (t) => `<tr>
-        <td class="en" dir="ltr">${t.id}</td><td>${t.cat}</td>
-        <td><span class="prio ${t.prio}">${PRIO_AR[t.prio]}</span></td>
-        <td><span class="status-chip ${t.status}">${STATUS_AR[t.status]}</span></td>
-        <td>${t.who}</td><td>${t.ago}</td>
-        <td><button type="button" class="btn btn-ghost btn-sm" data-claim="${t.id}">استلام</button></td>
-      </tr>`
-      )
-      .join("");
-    body.querySelectorAll("[data-claim]").forEach((b) => {
-      b.onclick = () => {
-        addAudit("ticket", "استلام " + b.dataset.claim);
-        toast("تم الاستلام (تجريبي)");
-      };
+    const q = ($("ticket-q")?.value || "").trim().toLowerCase();
+    const statusAr = { open: "مفتوحة", claimed: "مُستلمة", closed: "مغلقة" };
+    const prioAr = { high: "عالية", medium: "متوسطة", low: "منخفضة" };
+    let rows = Array.isArray(list) ? list.slice() : [];
+    rows = rows.filter((t) => {
+      const st = t.status || t.state || "open";
+      if (ticketFilter !== "all" && st !== ticketFilter) return false;
+      if (!q) return true;
+      return String(t.id || t.ticketId || "")
+        .toLowerCase()
+        .includes(q) || String(t.category || t.cat || "").includes(q);
     });
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="7" class="muted">ما فيه تذاكر الحين.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows
+      .map((t) => {
+        const id = t.id || t.ticketId || "—";
+        const cat = t.category || t.cat || "—";
+        const prio = t.priority || t.prio || "medium";
+        const st = t.status || t.state || "open";
+        const who = t.assignee || t.claimedBy || t.who || "—";
+        const ago = t.ago || t.createdAt || "";
+        return `<tr>
+          <td class="en" dir="ltr">${esc(id)}</td><td>${esc(cat)}</td>
+          <td><span class="prio ${esc(prio)}">${prioAr[prio] || esc(prio)}</span></td>
+          <td><span class="status-chip ${esc(st)}">${statusAr[st] || esc(st)}</span></td>
+          <td>${esc(who)}</td><td>${esc(ago)}</td><td></td></tr>`;
+      })
+      .join("");
   }
 
-  function renderLogs() {
-    const el = $("audit-list");
-    if (!el) return;
-    const items = settings().audit.length
-      ? settings().audit
-      : [
-          { type: "power", text: "البوت جاهز", at: new Date(Date.now() - 36e5).toISOString() },
-          { type: "settings", text: "تحميل إعدادات", at: new Date(Date.now() - 35e5).toISOString() },
-        ];
-    el.innerHTML = items
-      .map(
-        (a) =>
-          `<li><span class="audit-badge">${a.type}</span><span>${esc(a.text)}</span><time>${fmt(
-            a.at
-          )}</time></li>`
-      )
-      .join("");
-  }
-  function renderFeed() {
-    const el = $("ov-feed");
-    if (!el) return;
-    const items = (settings().audit.length
-      ? settings().audit
-      : [{ text: "TKT-0013 مبيعات", at: new Date().toISOString() }]
-    ).slice(0, 5);
-    el.innerHTML = items
-      .map(
-        (a) =>
-          `<li><span class="dot"></span><span>${esc(a.text)}</span><time>${rel(a.at)}</time></li>`
-      )
-      .join("");
-  }
-  function tickStats() {
-    const j = (n, d = 2) => Math.max(0, n + Math.round((Math.random() - 0.5) * d));
-    if ($("st-open")) $("st-open").textContent = j(12);
-    if ($("st-claimed")) $("st-claimed").textContent = j(7);
-    if ($("st-closed")) $("st-closed").textContent = j(23, 3);
-    if ($("st-sla")) $("st-sla").textContent = `${92 + Math.floor(Math.random() * 5)}%`;
-  }
-  function rel(iso) {
-    const m = Math.round((Date.now() - new Date(iso)) / 6e4);
-    if (m < 1) return "الآن";
-    if (m < 60) return `منذ ${m} د`;
-    return `منذ ${Math.round(m / 60)} س`;
-  }
-  function fmt(iso) {
-    try {
-      return new Date(iso).toLocaleString("ar-SA", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "numeric",
-        month: "short",
-      });
-    } catch {
-      return iso;
+  function renderOverviewFromTickets(list) {
+    if (!Array.isArray(list) || !list.length) return;
+    const open = list.filter((t) => (t.status || t.state) === "open").length;
+    const claimed = list.filter((t) => (t.status || t.state) === "claimed").length;
+    const closed = list.filter((t) => (t.status || t.state) === "closed").length;
+    if ($("st-open")) $("st-open").textContent = String(open);
+    if ($("st-claimed")) $("st-claimed").textContent = String(claimed);
+    if ($("st-closed")) $("st-closed").textContent = String(closed);
+    if ($("ov-feed")) {
+      $("ov-feed").innerHTML = list
+        .slice(0, 5)
+        .map((t) => {
+          const id = t.id || t.ticketId || "";
+          const cat = t.category || t.cat || "";
+          return `<li><span class="dot"></span><span>${esc(id)} — ${esc(cat)}</span></li>`;
+        })
+        .join("");
     }
   }
 
-  /* ===== Bind ===== */
+  function renderLogs(list) {
+    const el = $("audit-list");
+    if (!el) return;
+    if (!list || !list.length) {
+      el.innerHTML = '<li class="muted">ما فيه سجلات بعد.</li>';
+      return;
+    }
+    el.innerHTML = list
+      .map((a) => {
+        const type = a.type || a.action || "log";
+        const text = a.text || a.message || a.summary || "";
+        const at = a.at || a.createdAt || a.timestamp || "";
+        return `<li><span class="audit-badge">${esc(type)}</span><span>${esc(text)}</span><time>${esc(at)}</time></li>`;
+      })
+      .join("");
+  }
+
+  function collectPanelPayload() {
+    const list = $("cat-list");
+    return {
+      title: $("cfg-title")?.value.trim() || "",
+      color: $("cfg-hex")?.value.trim() || "#7C3AED",
+      desc: $("cfg-desc")?.value.trim() || "",
+      welcome: $("cfg-welcome")?.value.trim() || "",
+      channelId: $("cfg-channel")?.value.trim() || "",
+      categoryId: $("cfg-category")?.value.trim() || "",
+      categories: (list && list._cats) || [],
+    };
+  }
+  function collectRolesPayload() {
+    return {
+      owner: $("role-owner")?.value.trim() || "",
+      member: $("role-member")?.value.trim() || "",
+      support: $("role-support")?.value.trim() || "",
+      admin: $("role-admin")?.value.trim() || "",
+    };
+  }
+  function collectSmartPayload() {
+    return {
+      auto: !!$("sm-auto")?.checked,
+      suggest: !!$("sm-suggest")?.checked,
+      one: !!$("sm-one")?.checked,
+      idle: !!$("sm-idle")?.checked,
+      close: !!$("sm-close")?.checked,
+      sla: !!$("sm-sla")?.checked,
+      idleMin: +($("sm-idle-min")?.value || 30),
+      closeMin: +($("sm-close-min")?.value || 120),
+      slaMin: +($("sm-sla-min")?.value || 15),
+      prio: $("sm-prio")?.value || "medium",
+    };
+  }
+  function collectPermsPayload() {
+    const perms = {};
+    $$("#perm-body input").forEach((cb) => {
+      if (!perms[cb.dataset.perm]) perms[cb.dataset.perm] = {};
+      perms[cb.dataset.perm][cb.dataset.role] = cb.checked;
+    });
+    return perms;
+  }
+
+  /** Must succeed on API — never toast success for local-only */
+  async function saveSettings(section, partial) {
+    if (!guildId) {
+      toast("لا يوجد سيرفر محدد");
+      return false;
+    }
+    if (!apiBase()) {
+      toast("الخدمة مو متاحة");
+      return false;
+    }
+    try {
+      await api(route("settings", guildId) || `/api/guilds/${guildId}/settings`, {
+        method: "PUT",
+        body: JSON.stringify({ section, settings: partial }),
+      });
+      toast("تم الحفظ");
+      return true;
+    } catch (e) {
+      if (e.code === "UNAVAILABLE") toast("غير متاح حتى يكتمل الربط");
+      else if (e.code !== "401" && e.code !== "403") toast("ما انحفظ — الخادم ما أكّد");
+      return false;
+    }
+  }
+
+  async function publishPanel() {
+    if (!guildId || !apiBase()) {
+      toast("الخدمة مو متاحة");
+      return;
+    }
+    const panel = collectPanelPayload();
+    try {
+      await api(route("settings", guildId) || `/api/guilds/${guildId}/settings`, {
+        method: "PUT",
+        body: JSON.stringify({ section: "panel", settings: { panel } }),
+      });
+      await api(route("panel", guildId) || `/api/guilds/${guildId}/panel`, {
+        method: "POST",
+        body: JSON.stringify(panel),
+      });
+      toast("تم نشر المنبر");
+    } catch (e) {
+      if (e.code === "UNAVAILABLE") toast("غير متاح حتى يكتمل الربط");
+      else if (e.code !== "401" && e.code !== "403") toast("ما نُشر — الخادم ما أكّد");
+    }
+  }
+
   function bind() {
     window.addEventListener("hashchange", applyRoute);
 
@@ -602,18 +777,12 @@
     );
 
     $("btn-discord-login")?.addEventListener("click", loginDiscord);
-    $("btn-mock-login")?.addEventListener("click", () => {
-      enterSession({
-        user: MOCK_USER,
-        guilds: MOCK_GUILDS.map((g) => ({ ...g })),
-        mock: true,
-      });
-    });
     $("btn-logout")?.addEventListener("click", logout);
     $("btn-logout-side")?.addEventListener("click", logout);
     $("btn-invite-global")?.addEventListener("click", inviteBot);
     $("btn-side-open")?.addEventListener("click", openSide);
     $("sidebar-backdrop")?.addEventListener("click", closeSide);
+    $("btn-retry-guilds")?.addEventListener("click", () => loadAndRenderGuilds());
 
     $$(".btn[data-mod]").forEach((a) => {
       a.addEventListener("click", (e) => {
@@ -624,113 +793,55 @@
     });
 
     $("cfg-color")?.addEventListener("input", (e) => {
-      setVal("cfg-hex", e.target.value);
+      if ($("cfg-hex")) $("cfg-hex").value = e.target.value;
       updateGrad(e.target.value);
     });
     $("cfg-hex")?.addEventListener("change", (e) => {
       let v = e.target.value.trim();
       if (!v.startsWith("#")) v = "#" + v;
       if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
-        setVal("cfg-color", v);
+        if ($("cfg-color")) $("cfg-color").value = v;
         updateGrad(v);
       }
     });
 
     $("form-panel")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const p = settings().panel;
-      p.title = $("cfg-title").value.trim();
-      p.color = $("cfg-hex").value.trim() || "#7C3AED";
-      p.desc = $("cfg-desc").value.trim();
-      p.welcome = $("cfg-welcome").value.trim();
-      p.channelId = $("cfg-channel").value.trim();
-      p.categoryId = $("cfg-category").value.trim();
-      if (!(await persist("panel"))) return;
-      addAudit("settings", "حفظ المنبر");
-      toast("حُفظ المنبر");
+      await saveSettings("panel", { panel: collectPanelPayload() });
     });
-
-    $("btn-publish-panel")?.addEventListener("click", async () => {
-      if (!(await persist("panel"))) return;
-      if (apiBase()) {
-        try {
-          await api(rpath("panel", guildId), {
-            method: "POST",
-            body: JSON.stringify(settings().panel),
-          });
-          toast("نُشر المنبر للقناة");
-        } catch {
-          toast("تعذّر النشر — تحقق من الـ API و Redirect URI");
-        }
-      } else toast("نُشر المنبر (تجريبي)");
-      addAudit("panel", "نشر المنبر");
-    });
-
+    $("btn-publish-panel")?.addEventListener("click", publishPanel);
     $("btn-add-cat")?.addEventListener("click", () => {
-      settings().panel.categories.push({ name: "تصنيف جديد", key: "new", color: "#A855F7" });
-      renderCats();
+      const list = $("cat-list");
+      const cats = (list && list._cats) || [];
+      cats.push({ name: "تصنيف جديد", key: "new", color: "#A855F7" });
+      renderCats(cats);
     });
 
     $("form-roles")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      settings().roles = {
-        owner: $("role-owner").value.trim(),
-        member: $("role-member").value.trim(),
-        support: $("role-support").value.trim(),
-        admin: $("role-admin").value.trim(),
-      };
-      if (!(await persist("roles"))) return;
-      addAudit("settings", "حفظ الرتب");
-      toast("حُفظت الرتب");
+      await saveSettings("roles", { roles: collectRolesPayload() });
     });
-
     $("btn-save-perms")?.addEventListener("click", async () => {
-      const s = settings();
-      ensurePerms(s);
-      $$("#perm-body input").forEach((cb) => {
-        if (!s.perms[cb.dataset.perm]) s.perms[cb.dataset.perm] = {};
-        s.perms[cb.dataset.perm][cb.dataset.role] = cb.checked;
-      });
-      if (!(await persist("perms"))) return;
-      addAudit("settings", "حفظ الصلاحيات");
-      toast("حُفظت الصلاحيات");
+      await saveSettings("perms", { perms: collectPermsPayload() });
     });
-
     $("form-smart")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      settings().smart = {
-        auto: $("sm-auto").checked,
-        suggest: $("sm-suggest").checked,
-        one: $("sm-one").checked,
-        idle: $("sm-idle").checked,
-        close: $("sm-close").checked,
-        sla: $("sm-sla").checked,
-        idleMin: +$("sm-idle-min").value || 30,
-        closeMin: +$("sm-close-min").value || 120,
-        slaMin: +$("sm-sla-min").value || 15,
-        prio: $("sm-prio").value,
-      };
-      if (!(await persist("smart"))) return;
-      if ($("ov-smart")) $("ov-smart").textContent = settings().smart.auto ? "مفعّل" : "متوقف";
-      addAudit("settings", "حفظ الذكي");
-      toast("حُفظت الإعدادات الذكية");
+      await saveSettings("smart", { smart: collectSmartPayload() });
     });
 
-    $("ticket-filters")?.querySelectorAll(".chip-btn, button[data-f]").forEach((btn) => {
+    $("ticket-filters")?.querySelectorAll("button[data-f], .chip-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         $("ticket-filters")
-          .querySelectorAll(".chip-btn, button[data-f]")
+          .querySelectorAll("button[data-f], .chip-btn")
           .forEach((b) => b.classList.remove("is-on", "is-active"));
         btn.classList.add("is-on");
         ticketFilter = btn.dataset.f || "all";
-        renderTickets();
+        renderTickets(lastTickets);
       });
     });
-    $("ticket-q")?.addEventListener("input", renderTickets);
-    $("btn-refresh-logs")?.addEventListener("click", () => {
-      addAudit("settings", "تحديث السجل");
-      toast("تم التحديث");
-    });
+    $("ticket-q")?.addEventListener("input", () => renderTickets(lastTickets));
+    $("btn-refresh-logs")?.addEventListener("click", () => loadGuildModuleData("logs"));
+
     $$("[data-copy]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         try {

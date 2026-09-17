@@ -1,4 +1,4 @@
-/* Ops — multi-screen ProBot · purple→violet gradient · Arabic RTL */
+/* Ops — multi-screen · purple gradient · Arabic RTL */
 :root {
   --bg: #0B0B14;
   --bg2: #12121F;
@@ -77,7 +77,8 @@ body::before {
 .btn-glass {
   background: rgba(91,77,255,.14); color: var(--text); border: 1px solid var(--border);
 }
-.btn-discord { background: #5865F2; color: #fff; width: 100%; }
+.btn-discord { background: #5865F2; color: #fff; }
+.btn-discord.btn-block { width: 100%; }
 .btn-discord:hover { background: #4752C4; }
 .btn-block { width: 100%; }
 .btn-sm { padding: .4rem .75rem; font-size: .8rem; border-radius: 9px; }
@@ -150,11 +151,6 @@ body::before {
 }
 .login-card h1 { margin: .5rem 0 .35rem; font-size: 1.5rem; }
 .hint { font-size: .75rem; color: var(--faint); margin: .75rem 0 0; }
-.mock-box {
-  margin-top: 1rem; padding: .85rem; border-radius: 12px; text-align: start;
-  border: 1px dashed rgba(168,85,247,.4); background: rgba(91,77,255,.08); font-size: .85rem; color: var(--muted);
-}
-.mock-box .btn { margin-top: .55rem; }
 .back-link { display: inline-block; margin-top: 1rem; color: #C4B5FD; font-size: .88rem; }
 
 /* Servers — full screen grid */
@@ -421,4 +417,45 @@ body::before {
   .sidebar { position: fixed; z-index: 50; transform: translateX(105%); width: min(270px,88vw); inset: 0 0 0 auto; }
   .sidebar.is-open { transform: translateX(0); }
   .feat-grid, .stat-grid, .two-col, .form-dense, .toggle-grid { grid-template-columns: 1fr; }
+}
+
+/* QA: real Discord icons, errors, unavailable modules, add tile */
+.server-icon-img {
+  width: 70px; height: 70px; border-radius: 20px; object-fit: cover;
+  box-shadow: var(--glow); display: block;
+}
+.sg-icon.has-img { padding: 0; overflow: hidden; background: transparent; }
+.sg-icon.has-img img { width: 40px; height: 40px; border-radius: 11px; object-fit: cover; display: block; }
+.server-tile-add {
+  border-style: dashed; cursor: pointer; background: rgba(91,77,255,.08);
+}
+.server-tile-add:hover { border-color: #A855F7; }
+.server-icon.add-plus {
+  background: transparent; border: 2px dashed rgba(168,85,247,.55); color: #C4B5FD; font-size: 1.8rem;
+}
+.servers-error {
+  margin: 0 0 1rem; padding: .9rem 1rem; border-radius: 12px;
+  border: 1px solid rgba(239,68,68,.35); background: rgba(239,68,68,.1);
+  display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: space-between;
+}
+.servers-error p { margin: 0; color: #FECACA; font-size: .9rem; }
+.unavailable-banner {
+  margin: 0 0 1rem; padding: .75rem .9rem; border-radius: 11px; font-size: .88rem; font-weight: 600;
+  background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.35); color: #FCD34D;
+}
+.btn, .chip-btn, .side-link, .server-tile button, .server-tile a.btn {
+  min-height: 44px;
+}
+.chip-btn, .btn-sm { min-height: 40px; }
+.side-link { min-height: 44px; }
+
+@media (max-width: 390px) {
+  .topnav, .appbar { padding-inline: .75rem; gap: .4rem; }
+  .topnav-actions .btn-sm { padding: .4rem .55rem; font-size: .75rem; }
+  .servers-wrap, .workspace, .landing-body { padding-inline: .85rem; }
+  .server-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .75rem; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .work-top h1 { font-size: 1.05rem; }
+  .hero h1 { font-size: 1.65rem; }
+  .appbar-user #user-label { max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
