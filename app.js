@@ -48,10 +48,21 @@
 
   /** Parse `#/servers?login_code=...` style hash query */
   function hashQuery() {
+    const params = new URLSearchParams();
+    // Support: #/servers?login_code=...  and  ?login_code=...#/servers
+    try {
+      const search = new URLSearchParams(location.search || "");
+      search.forEach((v, k) => params.set(k, v));
+    } catch (_) {}
     const h = location.hash || "";
     const i = h.indexOf("?");
-    if (i < 0) return new URLSearchParams();
-    return new URLSearchParams(h.slice(i + 1));
+    if (i >= 0) {
+      try {
+        const hp = new URLSearchParams(h.slice(i + 1));
+        hp.forEach((v, k) => params.set(k, v));
+      } catch (_) {}
+    }
+    return params;
   }
   function clearHashQueryKeepPath(path) {
     location.hash = path || "#/servers";
@@ -304,7 +315,7 @@
     const loginCode = (hq.get("login_code") || hq.get("code") || "").trim();
     const oauthErr = hq.get("error");
     if (oauthErr) {
-      toast("فشل الدخول");
+      toast("ما تم الدخول. حاول مرة ثانية.");
       clearHashQueryKeepPath("#/login");
       applyRoute();
       return;
@@ -312,11 +323,19 @@
     if (loginCode) {
       try {
         await exchangeLoginCode(loginCode);
-        clearHashQueryKeepPath("#/servers");
+        history.replaceState({}, "", location.pathname + "#/servers");
         toast("تم تسجيل الدخول");
+        const meRaw = await api(route("me") || "/auth/me");
+        const user = normalizeUser(meRaw);
+        if (!user) throw new Error("NO_USER");
+        session = { user, guilds: [] };
+        setUserChrome(user);
+        try { await fetchGuilds(); } catch (_) {}
+        applyRoute();
+        return;
       } catch (e) {
         clearAuthToken();
-        toast(e && e.status === 404 ? "خدمة الدخول تحتاج تحديث — حاول بعد دقائق" : "فشل إكمال الدخول");
+        toast(e && e.status === 404 ? "خدمة الدخول مو جاهزة بعد" : "ما قدرنا نكمّل الدخول. اضغط تسجيل الدخول مرة ثانية.");
         clearHashQueryKeepPath("#/login");
         applyRoute();
         return;
@@ -940,7 +959,7 @@
   try {
     const q = new URLSearchParams(location.search);
     if (q.get("error")) {
-      toast("فشل الدخول: " + q.get("error"));
+      toast("ما تم الدخول. حاول مرة ثانية.");
       history.replaceState({}, "", location.pathname + location.hash);
     }
   } catch (_) {}
