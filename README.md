@@ -1,25 +1,24 @@
-# SEDRA / سدرة
+# Ops
 
-**Organic Honey Products** · ESTB 2025
+لوحة تحكم عربية (RTL) لبوت تذاكر ديسكورد الذكي.
 
-Quiet-luxury marketing site — Arabic-first RTL, mobile-first (iPhone Safari).
+**Live:** https://gaber311a-lang.github.io/ops/
 
-Brand lock: `BRAND.md` · Logo: `assets/logo.jpeg` (official lockup only).
-
-## Live
-
-https://gaber311a-lang.github.io/sedra/
+**Bot repo:** https://github.com/gaber311a-lang/discord-ticket-bot
 
 ## Local
-
-Open `index.html` in a browser, or:
 
 ```bash
 python3 -m http.server 8080
 ```
 
+افتح `http://localhost:8080` — أي رمز من 4 أرقام للدخول التجريبي.
+
 ## Stack
 
-- `index.html` — single marketing page
-- `styles.css` — forest / sage / cream palette
-- `app.js` — nav + WhatsApp order helper
+- `index.html` — لوحة التحكم (SPA)
+- `styles.css` — ثيم بنفسجي داكن / زجاجي
+- `app.js` — تنقّل، حفظ محلي (localStorage)، بيانات تجريبية
+- `.nojekyll` — GitHub Pages
+
+الإعدادات تُحفظ في المتصفح فقط حتى يربط Eng الـ API.

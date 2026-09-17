@@ -3,291 +3,356 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#003626" />
+  <meta name="theme-color" content="#0B0B14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="سدرة" />
-  <meta name="description" content="سدرة — عسل عضوي فاخر. SEDRA Organic Honey Products · ESTB 2025." />
-  <meta property="og:title" content="سدرة · SEDRA — Organic Honey Products" />
-  <meta property="og:description" content="عسل سدر عضوي فاخر — نقاء هادئ، طعم أصيل. ESTB 2025." />
-  <meta property="og:image" content="https://gaber311a-lang.github.io/sedra/assets/logo.jpeg" />
-  <meta property="og:url" content="https://gaber311a-lang.github.io/sedra/" />
+  <meta name="apple-mobile-web-app-title" content="Ops" />
+  <meta name="description" content="Ops — لوحة تحكم كاملة لبوت تذاكر ديسكورد الذكي." />
+  <meta property="og:title" content="Ops — لوحة تحكم البوت الذكي" />
+  <meta property="og:description" content="تعيين البوت بالكامل: التذاكر، الذكاء، الرسائل، الصلاحيات، والإحصائيات." />
+  <meta property="og:url" content="https://gaber311a-lang.github.io/ops/" />
   <meta property="og:locale" content="ar_SA" />
-  <meta name="twitter:card" content="summary" />
-  <title>سدرة · SEDRA — Organic Honey Products</title>
+  <title>Ops — لوحة تحكم البوت الذكي</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="assets/logo.jpeg" type="image/jpeg" />
-  <link rel="apple-touch-icon" href="assets/logo.jpeg" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
-  <a class="skip-link" href="#main">تخطي إلى المحتوى</a>
+  <a class="skip-link" href="#app-main">تخطي إلى المحتوى</a>
 
-  <header class="site-header" id="top">
-    <div class="header-inner">
-      <a class="brand" href="#top" aria-label="سدرة SEDRA — Organic Honey Products">
-        <img class="brand-mark" src="assets/logo.jpeg" width="48" height="48" alt="" />
-        <span class="brand-text">
-          <span class="brand-ar">سدرة</span>
-          <span class="brand-en">SEDRA</span>
-        </span>
-      </a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="القائمة">
-        <span></span><span></span>
-      </button>
-      <nav class="site-nav" id="site-nav" aria-label="القائمة الرئيسية">
-        <a href="#products">منتجات</a>
-        <a href="#story">قصتنا</a>
-        <a href="#quality">الجودة</a>
-        <a href="#contact">تواصل</a>
-      </nav>
+  <div id="login-gate" class="login-gate" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="login-bg" aria-hidden="true"></div>
+    <div class="login-card glass">
+      <div class="login-brand">
+        <div class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="40" height="40"><defs><linearGradient id="lg" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#5B4DFF"/><stop offset="1" stop-color="#A855F7"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#lg)" opacity=".2"/><path d="M10 26V14l10 7 10-7v12" stroke="url(#lg)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h1 id="login-title">Ops</h1>
+        <p class="login-sub">تعيين البوت الذكي بالكامل</p>
+      </div>
+      <form id="login-form" class="login-form" autocomplete="off">
+        <label class="field">
+          <span>رمز الدخول</span>
+          <input type="password" id="login-pin" name="pin" inputmode="numeric" maxlength="8" placeholder="••••" required />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">دخول إلى اللوحة</button>
+        <p class="demo-note" role="note">تجريبي — لا مصادقة خلفية بعد. أي رمز من 4 أرقام يفتح اللوحة. الإعدادات تُحفظ محلياً في المتصفح.</p>
+        <p id="login-error" class="form-error" hidden>أدخل رمزاً من 4 أرقام على الأقل.</p>
+      </form>
     </div>
-  </header>
+  </div>
 
-  <main id="main">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-glow" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <img class="hero-logo" src="assets/logo.jpeg" width="280" height="280" alt="سدرة SEDRA — Organic Honey Products · ESTB 2025" />
-        <p class="eyebrow">
-          <span class="en">ESTB 2025</span>
-          <span class="dot" aria-hidden="true">·</span>
-          <span class="en">Organic Honey Products</span>
-        </p>
-        <h1 id="hero-title">عسل عضوي فاخر<br /><span class="soft">من الطبيعة إلى مائدتك</span></h1>
-        <p class="hero-lead">
-          سدرة تختار أجود قطرات العسل الطبيعي — نقاء هادئ، طعم أصيل، وتعبئة تليق باللحظة.
-        </p>
-        <p class="hero-lead en hero-promise">Quiet purity. Authentic taste. Organic honey, crafted with care.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#products">استكشف المنتجات</a>
-          <a class="btn btn-ghost" href="#contact">اطلب الآن</a>
+  <div id="app" class="app" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo-mark sm" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="28" height="28"><defs><linearGradient id="lg2" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#5B4DFF"/><stop offset="1" stop-color="#A855F7"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#lg2)" opacity=".25"/><path d="M10 26V14l10 7 10-7v12" stroke="url(#lg2)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <strong class="brand-name">Ops</strong>
+          <span class="brand-tag">بوت ذكي · تحكم كامل</span>
         </div>
       </div>
-    </section>
-
-    <section class="section products" id="products" aria-labelledby="products-title">
-      <div class="section-inner">
-        <header class="section-head">
-          <p class="eyebrow"><span class="en">Collection</span></p>
-          <h2 id="products-title">منتجاتنا</h2>
-          <p class="section-lead">تشكيلة هادئة من عسل سدرة — كل منتج بصريّاً متناغم مع هوية الطبيعة والعضوي.</p>
-        </header>
-
-        <div class="product-grid">
-          <article class="product-card">
-            <div class="product-visual" data-motif="sidr" aria-hidden="true">
-              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="60" cy="78" rx="28" ry="10" fill="#003626" opacity=".18"/>
-                <path d="M60 28c-14 18-22 32-22 44a22 22 0 0044 0c0-12-8-26-22-44z" fill="#003626"/>
-                <path d="M60 36c-9 12-14 22-14 32a14 14 0 0028 0c0-10-5-20-14-32z" fill="#CFEDC2" opacity=".35"/>
-                <circle cx="60" cy="22" r="4" fill="#C7E6BC"/>
-              </svg>
-            </div>
-            <h3>عسل سدر</h3>
-            <p>عسل سدر فاخر، كثافة مخملية ونكهة دافئة تذكّر بغابات السدر.</p>
-            <span class="product-tag en">Sidr Honey</span>
-          </article>
-
-          <article class="product-card">
-            <div class="product-visual" data-motif="flowers" aria-hidden="true">
-              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="60" cy="58" r="10" fill="#003626"/>
-                <ellipse cx="60" cy="36" rx="9" ry="16" fill="#003626" opacity=".85"/>
-                <ellipse cx="60" cy="80" rx="9" ry="16" fill="#003626" opacity=".85"/>
-                <ellipse cx="38" cy="58" rx="16" ry="9" fill="#003626" opacity=".85"/>
-                <ellipse cx="82" cy="58" rx="16" ry="9" fill="#003626" opacity=".85"/>
-                <circle cx="60" cy="58" r="5" fill="#CFEDC2"/>
-              </svg>
-            </div>
-            <h3>عسل زهور</h3>
-            <p>مزيج زهور برّية — خفيف على الحواس، مناسب للصباح والهدايا اليومية.</p>
-            <span class="product-tag en">Wildflower</span>
-          </article>
-
-          <article class="product-card">
-            <div class="product-visual" data-motif="mountain" aria-hidden="true">
-              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 88L48 38l16 24 14-18 24 44H18z" fill="#003626"/>
-                <path d="M48 38l10 15 6-8 14 18" stroke="#CFEDC2" stroke-width="2.5" fill="none" opacity=".7"/>
-                <circle cx="86" cy="28" r="6" fill="#C7E6BC" opacity=".9"/>
-              </svg>
-            </div>
-            <h3>عسل جبلي</h3>
-            <p>من مراعٍ مرتفعة — نكهة عميقة ونقاء يعكس هواء الجبال.</p>
-            <span class="product-tag en">Mountain</span>
-          </article>
-
-          <article class="product-card">
-            <div class="product-visual" data-motif="creamed" aria-hidden="true">
-              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="38" y="34" width="44" height="58" rx="8" fill="#003626"/>
-                <rect x="44" y="42" width="32" height="34" rx="4" fill="#CFEDC2" opacity=".45"/>
-                <ellipse cx="60" cy="52" rx="12" ry="6" fill="#C7E6BC"/>
-                <path d="M48 88h24" stroke="#CFEDC2" stroke-width="2" opacity=".5"/>
-              </svg>
-            </div>
-            <h3>عسل كريمي</h3>
-            <p>قوام ناعم قابل للدهن — مثالي للفطور والضيافة الهادئة.</p>
-            <span class="product-tag en">Creamed</span>
-          </article>
-
-          <article class="product-card">
-            <div class="product-visual" data-motif="hive" aria-hidden="true">
-              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M40 34h40l12 18-12 18H40L28 52l12-18z" stroke="#003626" stroke-width="3" fill="#CFEDC2" opacity=".55"/>
-                <path d="M40 52h40l12 18-12 18H40L28 70l12-18z" stroke="#003626" stroke-width="3" fill="none"/>
-                <path d="M46 40h28M46 58h28M46 76h28" stroke="#003626" stroke-width="2" opacity=".4"/>
-              </svg>
-            </div>
-            <h3>خلايا وشمع</h3>
-            <p>شمع وخلايا طبيعية للعناية والمطبخ — لمسة من خلية النحل إلى المنزل.</p>
-            <span class="product-tag en">Hive &amp; Comb</span>
-          </article>
-
-          <article class="product-card">
-            <div class="product-visual" data-motif="gifts" aria-hidden="true">
-              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="32" y="48" width="56" height="42" rx="4" fill="#003626"/>
-                <path d="M32 62h56" stroke="#CFEDC2" stroke-width="3"/>
-                <path d="M60 48v42" stroke="#CFEDC2" stroke-width="3"/>
-                <path d="M48 48c0-10 6-16 12-16s12 6 12 16" stroke="#003626" stroke-width="3" fill="none"/>
-                <path d="M44 42h32v8H44z" fill="#C7E6BC"/>
-              </svg>
-            </div>
-            <h3>صناديق هدايا</h3>
-            <p>صناديق أنيقة — عسل سدرة بتعبئة تليق بالمناسبات الخاصة.</p>
-            <span class="product-tag en">Gift Sets</span>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section story" id="story" aria-labelledby="story-title">
-      <div class="section-inner story-grid">
-        <div class="story-copy">
-          <p class="eyebrow"><span class="en">Our Story</span></p>
-          <h2 id="story-title">قصتنا · لماذا عضوي</h2>
-          <p>
-            وُلدت سدرة من احترام بسيط للنحلة والأرض. نختار العسل العضوي بعناية،
-            ونحافظ على نقاوته دون إضافات — لأن الفخامة الحقيقية هي الصدق.
-          </p>
-          <ul class="why-list">
-            <li>
-              <strong>عضوي بطبيعته</strong>
-              <span>مصادر موثوقة، دون مواد حافظة أو نكهات مصنّعة.</span>
-            </li>
-            <li>
-              <strong>طعم أصيل</strong>
-              <span>نكهة سدر وزهور تعكس المواسم والمناطق.</span>
-            </li>
-            <li>
-              <strong>هدوء في التقديم</strong>
-              <span>تعبئة نظيفة، هوية هادئة، تجربة تليق بالمائدة.</span>
-            </li>
-          </ul>
-        </div>
-        <aside class="story-panel" aria-hidden="true">
-          <div class="story-panel-inner">
-            <p class="en story-panel-brand">SEDRA</p>
-            <p class="en story-panel-tag">Organic Honey Products</p>
-            <p class="en story-panel-est">ESTB 2025</p>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="section quality" id="quality" aria-labelledby="quality-title">
-      <div class="section-inner">
-        <header class="section-head">
-          <p class="eyebrow"><span class="en">Purity</span></p>
-          <h2 id="quality-title">الجودة والنقاء</h2>
-          <p class="section-lead">وعد بسيط: عسل طبيعي، اختيار دقيق، وتقديم يليق باللحظة.</p>
-        </header>
-        <div class="trust-grid">
-          <div class="trust-item">
-            <span class="trust-num en">01</span>
-            <h3>نقاء عضوي</h3>
-            <p>عسل طبيعي دون إضافات — نختار المصادر بعناية ونحترم دورة النحلة.</p>
-          </div>
-          <div class="trust-item">
-            <span class="trust-num en">02</span>
-            <h3>فحص واهتمام</h3>
-            <p>كل دفعة تمر بفحص بصري وحسي قبل التعبئة — نقاء ظاهر في القوام والطعم.</p>
-          </div>
-          <div class="trust-item">
-            <span class="trust-num en">03</span>
-            <h3>تعبئة أنيقة</h3>
-            <p>تقديم هادئ يليق بالمائدة والهدايا الخاصة — من الخلية إلى يدك.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section contact" id="contact" aria-labelledby="contact-title">
-      <div class="section-inner contact-inner">
-        <header class="section-head">
-          <p class="eyebrow"><span class="en">Order</span></p>
-          <h2 id="contact-title">تواصل · طلب</h2>
-          <p class="section-lead">اترك رسالتك وسنعود إليك — طلبات خاصة وهدايا مرحّب بها.</p>
-        </header>
-
-        <form class="order-form" id="order-form" novalidate>
-          <div class="field">
-            <label for="name">الاسم</label>
-            <input id="name" name="name" type="text" autocomplete="name" required placeholder="اسمك" />
-          </div>
-          <div class="field">
-            <label for="phone">الجوال</label>
-            <input id="phone" name="phone" type="tel" autocomplete="tel" required placeholder="05xxxxxxxx" dir="ltr" />
-          </div>
-          <div class="field field-full">
-            <label for="interest">المنتج / الطلب</label>
-            <select id="interest" name="interest">
-              <option value="عسل سدر">عسل سدر</option>
-              <option value="عسل زهور">عسل زهور</option>
-              <option value="عسل جبلي">عسل جبلي</option>
-              <option value="عسل كريمي">عسل كريمي</option>
-              <option value="خلايا وشمع">خلايا وشمع</option>
-              <option value="صناديق هدايا">صناديق هدايا</option>
-              <option value="استفسار عام">استفسار عام</option>
-            </select>
-          </div>
-          <div class="field field-full">
-            <label for="message">رسالتك</label>
-            <textarea id="message" name="message" rows="4" placeholder="كمية، مناسبة، أو تفاصيل التوصيل…"></textarea>
-          </div>
-          <div class="form-actions field-full">
-            <button class="btn btn-primary" type="submit">إرسال الطلب</button>
-            <a class="btn btn-wa" id="whatsapp-link" href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer">واتساب</a>
-            <p class="form-note" id="form-status" role="status" aria-live="polite"></p>
-          </div>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <img class="footer-logo" src="assets/logo.jpeg" width="72" height="72" alt="" />
-      <p class="footer-brand">
-        <span class="ar">سدرة</span>
-        <span class="en">SEDRA</span>
-      </p>
-      <p class="footer-tag en">Organic Honey Products</p>
-      <p class="footer-est en">ESTB 2025</p>
-      <nav class="footer-nav" aria-label="تذييل">
-        <a href="#products">منتجات</a>
-        <a href="#story">قصتنا</a>
-        <a href="#quality">الجودة</a>
-        <a href="#contact">تواصل</a>
+      <nav class="side-nav" aria-label="أقسام اللوحة">
+        <button type="button" class="nav-item is-active" data-view="overview"><span class="nav-ico">◈</span> نظرة عامة</button>
+        <button type="button" class="nav-item" data-view="bot-core"><span class="nav-ico">⚡</span> البوت والتشغيل</button>
+        <button type="button" class="nav-item" data-view="credentials"><span class="nav-ico">🔑</span> التوكن والاتصال</button>
+        <button type="button" class="nav-item" data-view="tickets"><span class="nav-ico">▣</span> التذاكر</button>
+        <button type="button" class="nav-item" data-view="panel"><span class="nav-ico">✦</span> لوحة التذاكر</button>
+        <button type="button" class="nav-item" data-view="smart"><span class="nav-ico">◎</span> السلوك الذكي</button>
+        <button type="button" class="nav-item" data-view="messages"><span class="nav-ico">✉</span> رسائل البوت</button>
+        <button type="button" class="nav-item" data-view="permissions"><span class="nav-ico">🛡</span> الصلاحيات</button>
+        <button type="button" class="nav-item" data-view="roles"><span class="nav-ico">♛</span> الرتب</button>
+        <button type="button" class="nav-item" data-view="audit"><span class="nav-ico">☰</span> سجل التدقيق</button>
+        <button type="button" class="nav-item" data-view="repo"><span class="nav-ico">⌘</span> المستودع</button>
       </nav>
-      <p class="footer-copy">© 2025 سدرة · SEDRA. جميع الحقوق محفوظة.</p>
-    </div>
-  </footer>
+      <div class="sidebar-foot">
+        <button type="button" class="btn btn-ghost btn-sm" id="logout-btn">خروج</button>
+      </div>
+    </aside>
 
-  <script src="app.js" defer></script>
+    <div class="app-body">
+      <header class="topbar">
+        <button type="button" class="nav-toggle" id="sidebar-toggle" aria-label="القائمة" aria-expanded="false" aria-controls="sidebar">
+          <span></span><span></span>
+        </button>
+        <div class="topbar-title">
+          <h2 id="view-title">نظرة عامة</h2>
+          <p class="mock-banner" role="status">بيانات تجريبية حتى يربط Eng الـ API — الحفظ محلي في المتصفح</p>
+        </div>
+        <div class="topbar-status">
+          <span class="status-pill online" id="bot-status-pill"><span class="pulse"></span> البوت يعمل</span>
+        </div>
+      </header>
+
+      <main id="app-main" class="main">
+        <!-- 1 Overview + live stats -->
+        <section id="view-overview" class="view is-active">
+          <div class="stat-grid">
+            <article class="stat-card glass"><p class="stat-label">مفتوحة</p><p class="stat-value" id="stat-open">12</p><p class="stat-hint">بانتظار الرد</p></article>
+            <article class="stat-card glass"><p class="stat-label">مُستَلَمة</p><p class="stat-value" id="stat-claimed">7</p><p class="stat-hint">تحت المعالجة</p></article>
+            <article class="stat-card glass"><p class="stat-label">أُغلقت اليوم</p><p class="stat-value" id="stat-closed">23</p><p class="stat-hint">+18% عن أمس</p></article>
+            <article class="stat-card glass"><p class="stat-label">متوسط الانتظار</p><p class="stat-value" id="stat-wait">4<span class="unit">د</span></p><p class="stat-hint">آخر 24 ساعة</p></article>
+            <article class="stat-card glass"><p class="stat-label">SLA ضمن الهدف</p><p class="stat-value" id="stat-sla">94<span class="unit">%</span></p><p class="stat-hint">هدف 15 دقيقة</p></article>
+            <article class="stat-card glass"><p class="stat-label">ردود تلقائية</p><p class="stat-value" id="stat-auto">41</p><p class="stat-hint">اليوم</p></article>
+            <article class="stat-card glass"><p class="stat-label">أعضاء نشطون</p><p class="stat-value" id="stat-members">186</p><p class="stat-hint">في السيرفر</p></article>
+            <article class="stat-card glass"><p class="stat-label">اقتراحات فئة</p><p class="stat-value" id="stat-suggest">29</p><p class="stat-hint">دقة تقديرية 87%</p></article>
+          </div>
+          <div class="panel-grid">
+            <article class="panel glass">
+              <header class="panel-head"><h3>حالة البوت الذكي</h3><span class="status-pill online sm" id="overview-bot-pill"><span class="pulse"></span> Online</span></header>
+              <dl class="meta-list">
+                <div><dt>الوضع</dt><dd id="overview-mode">ذكي · رد تلقائي مفعّل</dd></div>
+                <div><dt>زمن التشغيل</dt><dd id="overview-uptime">3ي 14س</dd></div>
+                <div><dt>الكمون</dt><dd>42ms</dd></div>
+                <div><dt>السيرفر</dt><dd class="en" id="overview-guild">—</dd></div>
+              </dl>
+              <div class="inline-actions">
+                <button type="button" class="btn btn-primary btn-sm" data-goto="bot-core">إدارة التشغيل</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-goto="smart">السلوك الذكي</button>
+              </div>
+            </article>
+            <article class="panel glass">
+              <header class="panel-head"><h3>آخر النشاط</h3></header>
+              <ul class="activity-list" id="overview-activity"></ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- Bot power -->
+        <section id="view-bot-core" class="view" hidden>
+          <article class="panel glass">
+            <header class="panel-head">
+              <h3>تشغيل / إيقاف البوت الذكي</h3>
+              <span class="status-pill online" id="power-pill"><span class="pulse"></span> يعمل</span>
+            </header>
+            <p class="bot-lead">تحكّم بحالة البوت من اللوحة. التغيير هنا تجريبي ويُحفظ محلياً حتى يربط Eng واجهة التشغيل الفعلية.</p>
+            <div class="power-row">
+              <button type="button" class="btn btn-primary" id="btn-start">تشغيل البوت</button>
+              <button type="button" class="btn btn-ghost" id="btn-stop">إيقاف</button>
+              <button type="button" class="btn btn-ghost" id="btn-restart">إعادة تشغيل</button>
+            </div>
+            <dl class="meta-list mt">
+              <div><dt>الوضع الذكي</dt><dd><label class="toggle"><input type="checkbox" id="smart-master" checked /><span>مفعّل</span></label></dd></div>
+              <div><dt>آخر نبضة</dt><dd id="last-heartbeat">الآن</dd></div>
+              <div><dt>حالة الاتصال</dt><dd id="conn-state">Gateway متصل</dd></div>
+            </dl>
+          </article>
+        </section>
+
+        <!-- Credentials -->
+        <section id="view-credentials" class="view" hidden>
+          <form class="settings-form" id="form-credentials">
+            <article class="panel glass">
+              <header class="panel-head"><h3>التوكن وبيانات الاتصال</h3><span class="badge-soft">حفظ محلي · تجريبي</span></header>
+              <div class="form-grid">
+                <label class="field full">
+                  <span>Bot Token</span>
+                  <div class="secret-row">
+                    <input type="password" name="token" id="cfg-token" class="en" dir="ltr" placeholder="••••••••••••••••" autocomplete="off" />
+                    <button type="button" class="btn btn-ghost btn-sm reveal-btn" data-target="cfg-token">إظهار</button>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Client ID</span>
+                  <input type="text" name="clientId" id="cfg-client" class="en" dir="ltr" placeholder="Application Client ID" />
+                </label>
+                <label class="field">
+                  <span>Guild ID</span>
+                  <input type="text" name="guildId" id="cfg-guild" class="en" dir="ltr" placeholder="Server ID" />
+                </label>
+                <label class="field">
+                  <span>قناة اللوحة</span>
+                  <input type="text" name="panelChannel" id="cfg-panel-ch" class="en" dir="ltr" placeholder="Channel ID" />
+                </label>
+                <label class="field">
+                  <span>فئة التذاكر</span>
+                  <input type="text" name="ticketCategory" id="cfg-ticket-cat" class="en" dir="ltr" placeholder="Category ID" />
+                </label>
+              </div>
+              <p class="field-hint">القيم مخفية جزئياً في العرض. لا تُرفع إلى GitHub — تُخزَّن في localStorage للمتصفح فقط.</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">حفظ الاتصال</button>
+              </div>
+            </article>
+          </form>
+        </section>
+
+        <!-- Tickets list -->
+        <section id="view-tickets" class="view" hidden>
+          <div class="toolbar">
+            <div class="filters" role="group" aria-label="تصفية">
+              <button type="button" class="chip is-active" data-filter="all">الكل</button>
+              <button type="button" class="chip" data-filter="open">مفتوحة</button>
+              <button type="button" class="chip" data-filter="claimed">مُستَلَمة</button>
+              <button type="button" class="chip" data-filter="closed">مغلقة</button>
+            </div>
+            <label class="search-field"><span class="sr-only">بحث</span><input type="search" id="ticket-search" placeholder="بحث برقم أو فئة…" /></label>
+          </div>
+          <div class="tickets-wrap">
+            <table class="tickets-table"><thead><tr><th>المعرّف</th><th>الفئة</th><th>الأولوية</th><th>الحالة</th><th>المسؤول</th><th>منذ</th></tr></thead><tbody id="tickets-body"></tbody></table>
+            <div class="tickets-cards" id="tickets-cards"></div>
+          </div>
+        </section>
+
+        <!-- Ticket panel settings -->
+        <section id="view-panel" class="view" hidden>
+          <form class="settings-form" id="form-panel">
+            <article class="panel glass">
+              <header class="panel-head"><h3>لوحة التذاكر (Embed)</h3></header>
+              <div class="form-grid">
+                <label class="field"><span>العنوان</span><input type="text" name="embedTitle" id="cfg-embed-title" /></label>
+                <label class="field">
+                  <span>لون بنفسجي متدرج</span>
+                  <div class="color-row">
+                    <input type="color" id="cfg-embed-color" value="#7C3AED" />
+                    <input type="text" id="cfg-embed-hex" class="en" dir="ltr" value="#7C3AED" />
+                  </div>
+                </label>
+                <label class="field full"><span>الوصف</span><textarea id="cfg-embed-desc" rows="3"></textarea></label>
+                <label class="field full"><span>نص الترحيب داخل التذكرة</span><textarea id="cfg-welcome" rows="3"></textarea></label>
+              </div>
+              <div class="gradient-preview" id="embed-preview" aria-hidden="true">معاينة اللون البنفسجي</div>
+            </article>
+            <article class="panel glass">
+              <header class="panel-head"><h3>التصنيفات</h3><button type="button" class="btn btn-ghost btn-sm" id="btn-add-cat">+ تصنيف</button></header>
+              <ul class="cat-edit-list" id="cat-edit-list"></ul>
+            </article>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">حفظ لوحة التذاكر</button></div>
+          </form>
+        </section>
+
+        <!-- Smart behavior -->
+        <section id="view-smart" class="view" hidden>
+          <form class="settings-form" id="form-smart">
+            <article class="panel glass">
+              <header class="panel-head"><h3>السلوك الذكي</h3><span class="badge-soft">بوت ذكي</span></header>
+              <div class="toggle-grid">
+                <label class="toggle-card"><input type="checkbox" id="smart-autoreply" checked /><span><strong>رد تلقائي</strong><small>رسالة فورية عند فتح تذكرة</small></span></label>
+                <label class="toggle-card"><input type="checkbox" id="smart-suggest" checked /><span><strong>اقتراح فئة</strong><small>تحليل نص العضو واقتراح التصنيف</small></span></label>
+                <label class="toggle-card"><input type="checkbox" id="smart-one" checked /><span><strong>تذكرة واحدة لكل عضو</strong><small>منع فتح أكثر من تذكرة مفتوحة</small></span></label>
+                <label class="toggle-card"><input type="checkbox" id="smart-idle" checked /><span><strong>تحذير خمول</strong><small>تنبيه عند عدم الرد</small></span></label>
+                <label class="toggle-card"><input type="checkbox" id="smart-autoclose" checked /><span><strong>إغلاق تلقائي</strong><small>إغلاق بعد الخمول</small></span></label>
+                <label class="toggle-card"><input type="checkbox" id="smart-sla" checked /><span><strong>مراقبة SLA</strong><small>تنبيه عند تجاوز المهلة</small></span></label>
+              </div>
+              <div class="form-grid mt">
+                <label class="field"><span>تحذير خمول بعد (دقيقة)</span><input type="number" id="cfg-idle-warn" min="1" value="30" /></label>
+                <label class="field"><span>إغلاق تلقائي بعد (دقيقة)</span><input type="number" id="cfg-idle-close" min="1" value="120" /></label>
+                <label class="field"><span>هدف SLA للرد الأول (دقيقة)</span><input type="number" id="cfg-sla" min="1" value="15" /></label>
+                <label class="field">
+                  <span>أولوية افتراضية</span>
+                  <select id="cfg-default-prio">
+                    <option value="low">منخفضة</option>
+                    <option value="medium" selected>متوسطة</option>
+                    <option value="high">عالية</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-actions"><button type="submit" class="btn btn-primary">حفظ السلوك الذكي</button></div>
+            </article>
+          </form>
+        </section>
+
+        <!-- Bot messages -->
+        <section id="view-messages" class="view" hidden>
+          <form class="settings-form" id="form-messages">
+            <article class="panel glass">
+              <header class="panel-head"><h3>رسائل البوت العربية</h3></header>
+              <div class="form-grid">
+                <label class="field full"><span>ترحيب التذكرة</span><textarea id="msg-welcome" rows="2"></textarea></label>
+                <label class="field full"><span>رد تلقائي</span><textarea id="msg-autoreply" rows="2"></textarea></label>
+                <label class="field full"><span>تم الاستلام</span><textarea id="msg-claimed" rows="2"></textarea></label>
+                <label class="field full"><span>تحذير خمول</span><textarea id="msg-idle" rows="2"></textarea></label>
+                <label class="field full"><span>إغلاق تلقائي</span><textarea id="msg-close" rows="2"></textarea></label>
+                <label class="field full"><span>تجاوز SLA</span><textarea id="msg-sla" rows="2"></textarea></label>
+                <label class="field full"><span>تذكرة موجودة مسبقاً</span><textarea id="msg-exists" rows="2"></textarea></label>
+                <label class="field full"><span>إغلاق يدوي / شكر</span><textarea id="msg-thanks" rows="2"></textarea></label>
+              </div>
+              <div class="form-actions"><button type="submit" class="btn btn-primary">حفظ الرسائل</button></div>
+            </article>
+          </form>
+        </section>
+
+        <!-- Permissions -->
+        <section id="view-permissions" class="view" hidden>
+          <form class="settings-form" id="form-perms">
+            <article class="panel glass">
+              <header class="panel-head"><h3>صلاحيات الأوامر والأزرار</h3></header>
+              <div class="perm-table-wrap">
+                <table class="perm-table">
+                  <thead><tr><th>العنصر</th><th>الجميع</th><th>الأعضاء</th><th>الدعم</th><th>المالك</th></tr></thead>
+                  <tbody id="perm-body"></tbody>
+                </table>
+              </div>
+              <div class="form-actions mt"><button type="submit" class="btn btn-primary">حفظ الصلاحيات</button></div>
+            </article>
+          </form>
+        </section>
+
+        <!-- Roles -->
+        <section id="view-roles" class="view" hidden>
+          <article class="panel glass">
+            <header class="panel-head"><h3>الرتب المُعدّة</h3><span class="badge-soft">قابلة للنسخ</span></header>
+            <div class="role-cards">
+              <div class="role-card">
+                <div class="role-meta">
+                  <span class="role-label">أونر / Owner</span>
+                  <code class="role-id en" dir="ltr">1550192474645856286</code>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm copy-btn" data-copy="1550192474645856286">نسخ</button>
+              </div>
+              <div class="role-card">
+                <div class="role-meta">
+                  <span class="role-label">عضو / Member</span>
+                  <code class="role-id en" dir="ltr">1550192307481874462</code>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm copy-btn" data-copy="1550192307481874462">نسخ</button>
+              </div>
+            </div>
+            <form class="form-grid mt" id="form-roles-extra">
+              <label class="field"><span>رتبة الدعم (اختياري)</span><input type="text" id="cfg-role-support" class="en" dir="ltr" placeholder="Support Role ID" /></label>
+              <label class="field"><span>رتبة الإدارة (اختياري)</span><input type="text" id="cfg-role-admin" class="en" dir="ltr" placeholder="Admin Role ID" /></label>
+            </form>
+            <div class="form-actions"><button type="button" class="btn btn-primary" id="btn-save-roles">حفظ الرتب الإضافية</button></div>
+            <p class="field-hint">أونر وعضو ثابتان حسب إعداد المشروع. الإضافات تُحفظ محلياً.</p>
+          </article>
+        </section>
+
+        <!-- Audit -->
+        <section id="view-audit" class="view" hidden>
+          <article class="panel glass">
+            <header class="panel-head"><h3>سجل التدقيق</h3><button type="button" class="btn btn-ghost btn-sm" id="btn-refresh-audit">تحديث</button></header>
+            <ul class="audit-list" id="audit-list"></ul>
+          </article>
+        </section>
+
+        <!-- Repo -->
+        <section id="view-repo" class="view" hidden>
+          <article class="panel glass bot-panel">
+            <header class="panel-head"><h3>مستودع البوت</h3></header>
+            <p class="bot-lead">Eng يبني البوت هنا. Ops لوحة التحكم فقط — اربط التشغيل عبر الـ API لاحقاً.</p>
+            <a class="repo-link" href="https://github.com/gaber311a-lang/discord-ticket-bot" target="_blank" rel="noopener noreferrer">
+              <span class="repo-ico" aria-hidden="true">⌘</span>
+              <span>
+                <strong class="en" dir="ltr">gaber311a-lang/discord-ticket-bot</strong>
+                <span class="repo-url en" dir="ltr">https://github.com/gaber311a-lang/discord-ticket-bot</span>
+              </span>
+              <span class="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+            <div class="hint-grid">
+              <div class="hint-card"><h4>دعوة البوت</h4><p>OAuth2 URL Generator → <span class="en">bot</span> + <span class="en">applications.commands</span> ثم الصلاحيات اللازمة للتذاكر والقنوات.</p></div>
+              <div class="hint-card"><h4>التوثيق</h4><p>راجع <span class="en">README</span> في المستودع لإعداد التوكن ومعرّفات الرتب وقناة اللوحة.</p></div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+  <div class="toast-global" id="toast-global" hidden role="status"></div>
+  <script src="app.js"></script>
 </body>
 </html>
