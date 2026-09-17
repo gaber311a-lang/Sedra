@@ -714,6 +714,7 @@
     });
   }
 
+  if (apiBase()) store.mockMode = false; // live API tunnel configured
   bind();
   updateModeChip();
   restoreSession();
