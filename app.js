@@ -1,665 +1,723 @@
 (() => {
-  const STORAGE_KEY = "ops-dashboard-v1";
-  const VIEW_TITLES = {
+  "use strict";
+
+  const CFG = window.OPS_CONFIG || {};
+  const STORE_KEY = "ops-pro-v1";
+
+  const MOD_TITLE = {
     overview: "نظرة عامة",
-    "bot-core": "البوت والتشغيل",
-    credentials: "التوكن والاتصال",
     tickets: "التذاكر",
-    panel: "لوحة التذاكر",
-    smart: "السلوك الذكي",
-    messages: "رسائل البوت",
-    permissions: "الصلاحيات",
-    roles: "الرتب",
-    audit: "سجل التدقيق",
-    repo: "المستودع",
+    panel: "المنبر",
+    roles: "الرتب والصلاحيات",
+    smart: "الإعدادات الذكية",
+    audit: "السجل",
   };
 
-  const DEFAULTS = {
-    botRunning: true,
-    smartMaster: true,
-    credentials: {
-      token: "",
-      clientId: "",
-      guildId: "",
-      panelChannel: "",
-      ticketCategory: "",
-    },
+  const MOCK_USER = { id: "1", username: "Gaber", global_name: "جابر" };
+  const MOCK_GUILDS = [
+    { id: "111", name: "سيرفر جابر", owner: true, botPresent: true },
+    { id: "222", name: "مجتمع الدعم", owner: true, botPresent: true },
+    { id: "333", name: "متجر تجريبي", owner: true, botPresent: false },
+    { id: "444", name: "سيرفر صديق", owner: false, botPresent: true },
+  ];
+
+  const defaultSettings = () => ({
     panel: {
-      embedTitle: "مركز التذاكر",
-      embedColor: "#7C3AED",
-      embedDesc: "اختر التصنيف المناسب وافتح تذكرة — فريق الدعم يرد بأسرع وقت.",
-      welcome: "مرحباً بك في مركز الدعم. صف طلبك بوضوح وسنساعدك فوراً.",
+      title: "مركز التذاكر",
+      color: "#7C3AED",
+      desc: "اختر التصنيف وافتح تذكرة — الدعم يرد بأسرع وقت.",
+      welcome: "مرحباً بك. صف طلبك بوضوح.",
+      channelId: "",
+      categoryId: "",
       categories: [
         { name: "دعم فني", key: "support", color: "#5B4DFF" },
         { name: "مبيعات", key: "sales", color: "#A855F7" },
         { name: "شكوى", key: "complaint", color: "#F59E0B" },
-        { name: "عامة", key: "general", color: "#22C55E" },
+        { name: "عامة", key: "general", color: "#8B5CF6" },
       ],
     },
+    roles: { owner: "", member: "", support: "", admin: "" },
     smart: {
-      autoreply: true,
+      auto: true,
       suggest: true,
-      oneTicket: true,
-      idleWarn: true,
-      autoClose: true,
+      one: true,
+      idle: true,
+      close: true,
       sla: true,
-      idleWarnMin: 30,
-      idleCloseMin: 120,
+      idleMin: 30,
+      closeMin: 120,
       slaMin: 15,
-      defaultPrio: "medium",
+      prio: "medium",
     },
-    messages: {
-      welcome: "أهلاً بك 👋 تم فتح تذكرتك. فريق الدعم سيراجع طلبك قريباً.",
-      autoreply: "استلمنا رسالتك. يُرجى عدم فتح تذكرة أخرى وانتظار الرد.",
-      claimed: "تم استلام التذكرة من قبل فريق الدعم. سنتواصل معك هنا.",
-      idle: "تنبيه: التذكرة بدون نشاط. سيتم إغلاقها تلقائياً إن استمر الخمول.",
-      close: "أُغلقت التذكرة تلقائياً بسبب الخمول. يمكنك فتح تذكرة جديدة عند الحاجة.",
-      sla: "تنبيه SLA: تجاوزت التذكرة مهلة الرد الأولى المحددة.",
-      exists: "لديك تذكرة مفتوحة بالفعل. أكمل المحادثة هناك بدلاً من فتح تذكرة جديدة.",
-      thanks: "تم إغلاق التذكرة. شكراً لتواصلك معنا — نحن هنا دائماً.",
-    },
-    rolesExtra: { support: "", admin: "" },
-    permissions: {},
+    perms: {},
     audit: [],
-  };
+  });
 
+  const TICKETS = [
+    { id: "TKT-0013", cat: "مبيعات", prio: "high", status: "open", who: "—", ago: "8 د" },
+    { id: "TKT-0012", cat: "دعم فني", prio: "medium", status: "claimed", who: "نورة", ago: "12 د" },
+    { id: "TKT-0011", cat: "شكوى", prio: "high", status: "claimed", who: "فهد", ago: "22 د" },
+    { id: "TKT-0010", cat: "عامة", prio: "low", status: "open", who: "—", ago: "35 د" },
+    { id: "TKT-0009", cat: "دعم فني", prio: "medium", status: "closed", who: "سارة", ago: "1 س" },
+  ];
+  const STATUS_AR = { open: "مفتوحة", claimed: "مُستلمة", closed: "مغلقة" };
+  const PRIO_AR = { high: "عالية", medium: "متوسطة", low: "منخفضة" };
   const PERM_ITEMS = [
     { id: "cmd_open", label: "/ticket فتح" },
     { id: "cmd_close", label: "/ticket إغلاق" },
     { id: "cmd_claim", label: "/ticket استلام" },
-    { id: "cmd_add", label: "/ticket إضافة عضو" },
-    { id: "btn_open", label: "زر فتح تذكرة" },
+    { id: "btn_open", label: "زر فتح" },
     { id: "btn_close", label: "زر إغلاق" },
     { id: "btn_claim", label: "زر استلام" },
-    { id: "btn_transcript", label: "زر نسخة المحادثة" },
   ];
+  const PERM_ROLES = ["everyone", "member", "support", "admin"];
 
-  const PERM_ROLES = ["everyone", "member", "support", "owner"];
+  const $ = (id) => document.getElementById(id);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  const MOCK_TICKETS = [
-    { id: "TKT-0013", cat: "مبيعات", prio: "high", status: "open", assignee: "—", ago: "8 د" },
-    { id: "TKT-0012", cat: "دعم فني", prio: "medium", status: "claimed", assignee: "نورة", ago: "12 د" },
-    { id: "TKT-0011", cat: "شكوى", prio: "high", status: "claimed", assignee: "فهد", ago: "22 د" },
-    { id: "TKT-0010", cat: "عامة", prio: "low", status: "open", assignee: "—", ago: "35 د" },
-    { id: "TKT-0009", cat: "دعم فني", prio: "medium", status: "closed", assignee: "سارة", ago: "1 س" },
-    { id: "TKT-0008", cat: "مبيعات", prio: "low", status: "closed", assignee: "فهد", ago: "2 س" },
-    { id: "TKT-0007", cat: "دعم فني", prio: "high", status: "claimed", assignee: "نورة", ago: "3 س" },
-    { id: "TKT-0006", cat: "عامة", prio: "medium", status: "open", assignee: "—", ago: "4 س" },
-  ];
-
-  const STATUS_AR = { open: "مفتوحة", claimed: "مُستَلَمة", closed: "مغلقة" };
-  const PRIO_AR = { high: "عالية", medium: "متوسطة", low: "منخفضة" };
-
-  let state = loadState();
+  let store = loadStore();
+  let session = null;
+  let guildId = null;
   let ticketFilter = "all";
 
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  function apiBase() {
+    return String(window.OPS_API_BASE || CFG.API_BASE || "").replace(/\/$/, "");
+  }
+  function isLive() {
+    return Boolean(apiBase()) && !store.mockMode;
+  }
+  function route(key, id) {
+    let p = (CFG.routes && CFG.routes[key]) || "";
+    if (id) p = p.replace(":guildId", id);
+    return p;
+  }
+  async function api(pathname, opts = {}) {
+    if (!isLive()) throw new Error("MOCK");
+    const res = await fetch(apiBase() + pathname, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+      ...opts,
+    });
+    if (res.status === 403) {
+      showForbidden();
+      throw new Error("403");
+    }
+    if (!res.ok) throw new Error("API " + res.status);
+    if (res.status === 204) return null;
+    return res.json();
+  }
 
-  function loadState() {
+  function loadStore() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return structuredClone(DEFAULTS);
-      const parsed = JSON.parse(raw);
-      return deepMerge(structuredClone(DEFAULTS), parsed);
+      const raw = localStorage.getItem(STORE_KEY);
+      const base = { mockMode: !(window.OPS_API_BASE || CFG.API_BASE) && CFG.MOCK_DEFAULT !== false, guilds: {}, lastGuildId: null };
+      return raw ? Object.assign(base, JSON.parse(raw)) : base;
     } catch {
-      return structuredClone(DEFAULTS);
+      return { mockMode: !apiBase(), guilds: {}, lastGuildId: null };
     }
   }
-
-  function deepMerge(base, patch) {
-    if (!patch || typeof patch !== "object") return base;
-    for (const k of Object.keys(patch)) {
-      if (patch[k] && typeof patch[k] === "object" && !Array.isArray(patch[k])) {
-        base[k] = deepMerge(base[k] || {}, patch[k]);
-      } else {
-        base[k] = patch[k];
-      }
-    }
-    return base;
+  function saveStore() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
   }
-
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  function settings(id = guildId) {
+    if (!id) return defaultSettings();
+    if (!store.guilds[id]) store.guilds[id] = defaultSettings();
+    return store.guilds[id];
   }
 
   function toast(msg) {
-    const el = $("#toast-global");
+    const el = $("toast");
+    if (!el) return;
     el.textContent = msg;
     el.hidden = false;
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => { el.hidden = true; }, 2600);
+    toast._t = setTimeout(() => {
+      el.hidden = true;
+    }, 2800);
   }
-
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
+  }
   function addAudit(type, text) {
-    const entry = {
-      type,
-      text,
-      at: new Date().toISOString(),
-    };
-    state.audit.unshift(entry);
-    state.audit = state.audit.slice(0, 80);
-    saveState();
+    if (!guildId) return;
+    const s = settings();
+    s.audit.unshift({ type, text, at: new Date().toISOString() });
+    s.audit = s.audit.slice(0, 50);
+    saveStore();
     renderAudit();
+    renderFeed();
   }
 
-  function maskSecret(v) {
-    if (!v) return "";
-    if (v.length <= 8) return "•".repeat(v.length);
-    return v.slice(0, 4) + "•".repeat(Math.min(20, v.length - 8)) + v.slice(-4);
+  function showMarketing() {
+    $("marketing").hidden = false;
+    $("dashboard").hidden = true;
+    closeAuth();
+  }
+  function showDashboard() {
+    $("marketing").hidden = true;
+    $("dashboard").hidden = false;
+  }
+  function openAuth() {
+    $("auth-modal").hidden = false;
+  }
+  function closeAuth() {
+    $("auth-modal").hidden = true;
+  }
+  function showServers() {
+    $("screen-servers").hidden = false;
+    $("screen-guild").hidden = true;
+    if ($("screen-forbidden")) $("screen-forbidden").hidden = true;
+    $("guild-chip").hidden = true;
+    closeSide();
+    renderServers();
+  }
+  function showForbidden() {
+    $("screen-servers").hidden = true;
+    $("screen-guild").hidden = true;
+    if ($("screen-forbidden")) $("screen-forbidden").hidden = false;
+    toast("403 — الأونر فقط يقدر يعدّل إعدادات السيرفر");
+  }
+  function closeSide() {
+    $("dash-side")?.classList.remove("is-open");
+  }
+  function openSide() {
+    $("dash-side")?.classList.add("is-open");
   }
 
-  /* Auth */
-  const gate = $("#login-gate");
-  const app = $("#app");
-  if (sessionStorage.getItem("ops-authed") === "1") {
-    gate.hidden = true;
-    app.hidden = false;
+  function updateModeChip() {
+    if ($("mode-chip")) $("mode-chip").textContent = isLive() ? "متصل بالـ API" : "تجريبي";
+    if ($("toggle-mock")) $("toggle-mock").checked = store.mockMode;
   }
 
-  $("#login-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const pin = $("#login-pin").value.trim();
-    const err = $("#login-error");
-    if (pin.length < 4) {
-      err.hidden = false;
+  function enterSession({ user, guilds, mock }) {
+    session = { user, guilds, mock };
+    if (mock) sessionStorage.setItem("ops-mock", "1");
+    showDashboard();
+    closeAuth();
+    if ($("user-label")) $("user-label").textContent = user.global_name || user.username || "مستخدم";
+    if ($("user-avatar")) $("user-avatar").textContent = (user.global_name || user.username || "?").slice(0, 1);
+    updateModeChip();
+    showServers();
+    toast(mock ? "دخول تجريبي (محاكاة Discord)" : "تم تسجيل الدخول");
+  }
+
+  function loginDiscord() {
+    const base = apiBase();
+    if (base) {
+      window.location.href = base + (route("login") || "/auth/discord");
       return;
     }
-    err.hidden = true;
-    sessionStorage.setItem("ops-authed", "1");
-    gate.hidden = true;
-    app.hidden = false;
-    addAudit("power", "تسجيل دخول إلى لوحة Ops (تجريبي)");
-    toast("مرحباً بك في Ops");
-  });
-
-  $("#logout-btn").addEventListener("click", () => {
-    sessionStorage.removeItem("ops-authed");
-    app.hidden = true;
-    gate.hidden = false;
-    $("#login-pin").value = "";
-    closeSidebar();
-  });
-
-  /* Navigation */
-  function showView(name) {
-    $$(".view").forEach((v) => {
-      const on = v.id === `view-${name}`;
-      v.hidden = !on;
-      v.classList.toggle("is-active", on);
-    });
-    $$(".nav-item").forEach((b) => b.classList.toggle("is-active", b.dataset.view === name));
-    $("#view-title").textContent = VIEW_TITLES[name] || name;
-    closeSidebar();
-    if (name === "tickets") renderTickets();
-    if (name === "audit") renderAudit();
+    toast("عيّن OPS_API_BASE أو استخدم الدخول التجريبي");
+    $("auth-modal")?.querySelector(".mock-box")?.classList.add("pulse");
   }
 
-  $$(".nav-item").forEach((btn) => {
-    btn.addEventListener("click", () => showView(btn.dataset.view));
-  });
-
-  $$("[data-goto]").forEach((btn) => {
-    btn.addEventListener("click", () => showView(btn.dataset.goto));
-  });
-
-  const sidebar = $("#sidebar");
-  const backdrop = $("#sidebar-backdrop");
-  const toggle = $("#sidebar-toggle");
-
-  function openSidebar() {
-    sidebar.classList.add("is-open");
-    toggle.setAttribute("aria-expanded", "true");
-    backdrop.hidden = false;
-  }
-  function closeSidebar() {
-    sidebar.classList.remove("is-open");
-    toggle.setAttribute("aria-expanded", "false");
-    backdrop.hidden = true;
-  }
-  toggle.addEventListener("click", () => {
-    sidebar.classList.contains("is-open") ? closeSidebar() : openSidebar();
-  });
-  backdrop.addEventListener("click", closeSidebar);
-
-  /* Bot power */
-  function syncBotUI() {
-    const on = state.botRunning;
-    const pill = $("#bot-status-pill");
-    const power = $("#power-pill");
-    const overview = $("#overview-bot-pill");
-    const label = on ? "البوت يعمل" : "البوت متوقف";
-    const cls = on ? "online" : "offline";
-    [pill, power, overview].forEach((el) => {
-      if (!el) return;
-      el.className = `status-pill ${cls}` + (el.classList.contains("sm") || el.id === "overview-bot-pill" ? (el.id === "overview-bot-pill" || el.classList.contains("sm") ? " sm" : "") : "");
-      if (el.id === "overview-bot-pill" || el.classList.contains("sm")) {
-        el.className = `status-pill ${cls} sm`;
-      } else {
-        el.className = `status-pill ${cls}`;
-      }
-      el.innerHTML = `<span class="pulse"></span> ${el.id === "overview-bot-pill" ? (on ? "Online" : "Offline") : label}`;
-    });
-    $("#conn-state").textContent = on ? "Gateway متصل" : "غير متصل";
-    $("#last-heartbeat").textContent = on ? "الآن" : "—";
-    $("#overview-mode").textContent = state.smartMaster
-      ? "ذكي · رد تلقائي مفعّل"
-      : "وضع أساسي · الذكاء متوقف";
-    $("#smart-master").checked = state.smartMaster;
-    $("#btn-start").disabled = on;
-    $("#btn-stop").disabled = !on;
-  }
-
-  $("#btn-start").addEventListener("click", () => {
-    state.botRunning = true;
-    saveState();
-    syncBotUI();
-    addAudit("power", "تشغيل البوت الذكي");
-    toast("تم تشغيل البوت (تجريبي)");
-  });
-  $("#btn-stop").addEventListener("click", () => {
-    state.botRunning = false;
-    saveState();
-    syncBotUI();
-    addAudit("power", "إيقاف البوت");
-    toast("تم إيقاف البوت (تجريبي)");
-  });
-  $("#btn-restart").addEventListener("click", () => {
-    state.botRunning = true;
-    saveState();
-    syncBotUI();
-    addAudit("power", "إعادة تشغيل البوت");
-    toast("تمت إعادة التشغيل (تجريبي)");
-  });
-  $("#smart-master").addEventListener("change", (e) => {
-    state.smartMaster = e.target.checked;
-    saveState();
-    syncBotUI();
-    addAudit("settings", state.smartMaster ? "تفعيل الوضع الذكي" : "إيقاف الوضع الذكي");
-  });
-
-  /* Credentials */
-  function fillCredentials() {
-    const c = state.credentials;
-    $("#cfg-token").value = c.token || "";
-    $("#cfg-client").value = c.clientId || "";
-    $("#cfg-guild").value = c.guildId || "";
-    $("#cfg-panel-ch").value = c.panelChannel || "";
-    $("#cfg-ticket-cat").value = c.ticketCategory || "";
-    $("#overview-guild").textContent = c.guildId ? maskSecret(c.guildId) : "غير مُعد";
-  }
-
-  $$(".reveal-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const input = document.getElementById(btn.dataset.target);
-      if (!input) return;
-      const show = input.type === "password";
-      input.type = show ? "text" : "password";
-      btn.textContent = show ? "إخفاء" : "إظهار";
-    });
-  });
-
-  $("#form-credentials").addEventListener("submit", (e) => {
-    e.preventDefault();
-    state.credentials = {
-      token: $("#cfg-token").value.trim(),
-      clientId: $("#cfg-client").value.trim(),
-      guildId: $("#cfg-guild").value.trim(),
-      panelChannel: $("#cfg-panel-ch").value.trim(),
-      ticketCategory: $("#cfg-ticket-cat").value.trim(),
-    };
-    saveState();
-    fillCredentials();
-    addAudit("settings", "حفظ بيانات الاتصال (محلي)");
-    toast("حُفظ الاتصال محلياً");
-  });
-
-  /* Panel + categories */
-  function fillPanel() {
-    const p = state.panel;
-    $("#cfg-embed-title").value = p.embedTitle;
-    $("#cfg-embed-color").value = p.embedColor;
-    $("#cfg-embed-hex").value = p.embedColor;
-    $("#cfg-embed-desc").value = p.embedDesc;
-    $("#cfg-welcome").value = p.welcome;
-    updateEmbedPreview(p.embedColor);
-    renderCatEditor();
-  }
-
-  function updateEmbedPreview(color) {
-    const el = $("#embed-preview");
-    el.style.background = `linear-gradient(135deg, #5B4DFF, ${color}, #A855F7)`;
-  }
-
-  $("#cfg-embed-color").addEventListener("input", (e) => {
-    $("#cfg-embed-hex").value = e.target.value;
-    updateEmbedPreview(e.target.value);
-  });
-  $("#cfg-embed-hex").addEventListener("change", (e) => {
-    let v = e.target.value.trim();
-    if (!/^#/.test(v)) v = "#" + v;
-    if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
-      $("#cfg-embed-color").value = v;
-      updateEmbedPreview(v);
+  function inviteBot(gid) {
+    const base = apiBase();
+    if (base) {
+      window.location.href = base + (route("invite") || "/invite");
+      return;
     }
-  });
+    if (gid && session) {
+      const g = session.guilds.find((x) => x.id === gid);
+      if (g) {
+        g.botPresent = true;
+        renderServers();
+        toast("محاكاة دعوة البوت");
+        return;
+      }
+    }
+    const url =
+      typeof CFG.inviteUrl === "function"
+        ? CFG.inviteUrl(CFG.DISCORD_CLIENT_ID)
+        : "https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=2147609616&scope=bot%20applications.commands";
+    window.open(url, "_blank", "noopener");
+  }
 
-  function renderCatEditor() {
-    const list = $("#cat-edit-list");
-    list.innerHTML = "";
-    state.panel.categories.forEach((cat, i) => {
-      const li = document.createElement("li");
-      li.className = "cat-edit-row";
-      li.innerHTML = `
-        <input type="color" value="${cat.color}" data-i="${i}" data-f="color" aria-label="لون التصنيف" />
-        <input type="text" value="${escapeAttr(cat.name)}" data-i="${i}" data-f="name" placeholder="الاسم بالعربي" />
-        <input type="text" class="en" dir="ltr" value="${escapeAttr(cat.key)}" data-i="${i}" data-f="key" placeholder="key" />
-        <button type="button" class="btn btn-ghost btn-sm cat-actions" data-del="${i}">حذف</button>
-      `;
-      list.appendChild(li);
-    });
-    list.querySelectorAll("input").forEach((inp) => {
-      inp.addEventListener("change", () => {
-        const i = +inp.dataset.i;
-        const f = inp.dataset.f;
-        state.panel.categories[i][f] = inp.value;
+  async function logout() {
+    if (isLive()) {
+      try {
+        await api(route("logout"), { method: "POST" });
+      } catch (_) {}
+    }
+    sessionStorage.removeItem("ops-mock");
+    session = null;
+    guildId = null;
+    showMarketing();
+  }
+
+  async function restoreSession() {
+    if (isLive()) {
+      try {
+        const me = await api(route("me"));
+        const g = await api(route("guilds"));
+        enterSession({ user: me, guilds: g.guilds || g, mock: false });
+        return;
+      } catch (_) {}
+    }
+    if (sessionStorage.getItem("ops-mock") === "1") {
+      enterSession({
+        user: MOCK_USER,
+        guilds: MOCK_GUILDS.map((g) => ({ ...g })),
+        mock: true,
       });
+    }
+  }
+
+  function renderServers() {
+    const grid = $("server-grid");
+    if (!grid || !session) return;
+    const list = session.guilds || [];
+    grid.innerHTML =
+      list
+        .map((g) => {
+          let badge;
+          let action;
+          if (!g.owner) {
+            badge = '<span class="badge warn">لست الأونر</span>';
+            action = `<button type="button" class="btn btn-ghost btn-sm" data-deny="${g.id}">لا صلاحية</button>`;
+          } else if (!g.botPresent) {
+            badge = '<span class="badge warn">البوت غير موجود</span>';
+            action = `<button type="button" class="btn btn-discord btn-sm" data-invite="${g.id}">إضافة البوت</button>`;
+          } else {
+            badge = '<span class="badge ok">الأونر · البوت جاهز</span>';
+            action = `<button type="button" class="btn btn-gradient btn-sm" data-open="${g.id}">فتح الإعدادات</button>`;
+          }
+          return `<article class="server-tile glass-card ${g.owner && g.botPresent ? "" : "dim"}">
+          <div class="server-icon">${esc((g.name || "?").slice(0, 1))}</div>
+          <strong>${esc(g.name)}</strong>${badge}${action}</article>`;
+        })
+        .join("") ||
+      '<p class="empty-hint">لا سيرفرات. ادعُ البوت لسيرفر تملكه (Owner).</p>';
+
+    grid.querySelectorAll("[data-open]").forEach((b) => {
+      b.onclick = () => openGuild(b.dataset.open);
+    });
+    grid.querySelectorAll("[data-invite]").forEach((b) => {
+      b.onclick = () => inviteBot(b.dataset.invite);
+    });
+    grid.querySelectorAll("[data-deny]").forEach((b) => {
+      b.onclick = () => showForbidden();
+    });
+  }
+
+  async function openGuild(id) {
+    const g = session?.guilds.find((x) => x.id === id);
+    if (!g) return;
+    if (!g.owner) return showForbidden();
+    if (!g.botPresent) return toast("ادعُ البوت أولاً");
+
+    guildId = id;
+    store.lastGuildId = id;
+    saveStore();
+
+    if (isLive()) {
+      try {
+        const remote = await api(route("settings", id));
+        if (remote) store.guilds[id] = Object.assign(defaultSettings(), remote);
+        saveStore();
+      } catch (e) {
+        if (e.message === "403") return;
+      }
+    }
+
+    $("screen-servers").hidden = true;
+    if ($("screen-forbidden")) $("screen-forbidden").hidden = true;
+    $("screen-guild").hidden = false;
+    $("guild-chip").hidden = false;
+    $("guild-chip").textContent = g.name;
+    $("side-guild-name").textContent = g.name;
+    $("side-guild-icon").textContent = (g.name || "S").slice(0, 1);
+    if ($("ov-perm")) $("ov-perm").textContent = "مالك السيرفر (Owner)";
+    fillForms();
+    showMod("overview");
+    renderTickets();
+    renderAudit();
+    renderFeed();
+    tickStats();
+  }
+
+  function showMod(name) {
+    ["overview", "tickets", "panel", "roles", "smart", "audit"].forEach((m) => {
+      const el = $("mod-" + m);
+      if (el) el.hidden = m !== name;
+    });
+    $$("[data-mod]").forEach((b) => b.classList.toggle("is-active", b.dataset.mod === name));
+    if ($("mod-title")) $("mod-title").textContent = MOD_TITLE[name] || name;
+    closeSide();
+  }
+
+  async function persist(section) {
+    const g = session?.guilds.find((x) => x.id === guildId);
+    if (!g?.owner) {
+      showForbidden();
+      return false;
+    }
+    saveStore();
+    if (isLive()) {
+      try {
+        await api(route("settings", guildId), {
+          method: "PUT",
+          body: JSON.stringify({ section, settings: settings() }),
+        });
+      } catch (e) {
+        if (e.message === "403") return false;
+        toast("تعذّر الحفظ على الخادم — بقي محلياً");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function setVal(id, v) {
+    const el = $(id);
+    if (el) el.value = v ?? "";
+  }
+  function setCheck(id, v) {
+    const el = $(id);
+    if (el) el.checked = !!v;
+  }
+
+  function fillForms() {
+    const s = settings();
+    const p = s.panel;
+    setVal("cfg-title", p.title);
+    setVal("cfg-color", p.color);
+    setVal("cfg-hex", p.color);
+    setVal("cfg-desc", p.desc);
+    setVal("cfg-welcome", p.welcome);
+    setVal("cfg-channel", p.channelId);
+    setVal("cfg-category", p.categoryId);
+    updateGrad(p.color);
+    renderCats();
+    setVal("role-owner", s.roles.owner);
+    setVal("role-member", s.roles.member);
+    setVal("role-support", s.roles.support);
+    setVal("role-admin", s.roles.admin);
+    const sm = s.smart;
+    setCheck("sm-auto", sm.auto);
+    setCheck("sm-suggest", sm.suggest);
+    setCheck("sm-one", sm.one);
+    setCheck("sm-idle", sm.idle);
+    setCheck("sm-close", sm.close);
+    setCheck("sm-sla", sm.sla);
+    setVal("sm-idle-min", sm.idleMin);
+    setVal("sm-close-min", sm.closeMin);
+    setVal("sm-sla-min", sm.slaMin);
+    setVal("sm-prio", sm.prio);
+    if ($("ov-smart")) $("ov-smart").textContent = sm.auto ? "مفعّل" : "متوقف";
+    if ($("ov-bot")) $("ov-bot").textContent = "متصل";
+    ensurePerms(s);
+    renderPerms();
+  }
+
+  function updateGrad(color) {
+    const el = $("grad-preview");
+    if (el) el.style.background = `linear-gradient(135deg,#5B4DFF,${color},#A855F7)`;
+  }
+
+  function renderCats() {
+    const list = $("cat-list");
+    if (!list) return;
+    const cats = settings().panel.categories;
+    list.innerHTML = cats
+      .map(
+        (c, i) => `<li class="cat-row">
+      <input type="color" value="${c.color}" data-i="${i}" data-f="color"/>
+      <input type="text" value="${esc(c.name)}" data-i="${i}" data-f="name"/>
+      <input type="text" class="en" dir="ltr" value="${esc(c.key)}" data-i="${i}" data-f="key"/>
+      <button type="button" class="btn btn-ghost btn-sm" data-del="${i}">حذف</button>
+    </li>`
+      )
+      .join("");
+    list.querySelectorAll("input").forEach((inp) => {
+      inp.onchange = () => {
+        settings().panel.categories[+inp.dataset.i][inp.dataset.f] = inp.value;
+      };
     });
     list.querySelectorAll("[data-del]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.panel.categories.splice(+btn.dataset.del, 1);
-        renderCatEditor();
-      });
+      btn.onclick = () => {
+        settings().panel.categories.splice(+btn.dataset.del, 1);
+        renderCats();
+      };
     });
   }
 
-  $("#btn-add-cat").addEventListener("click", () => {
-    state.panel.categories.push({ name: "تصنيف جديد", key: "new", color: "#A855F7" });
-    renderCatEditor();
-  });
-
-  $("#form-panel").addEventListener("submit", (e) => {
-    e.preventDefault();
-    state.panel.embedTitle = $("#cfg-embed-title").value.trim();
-    state.panel.embedColor = $("#cfg-embed-hex").value.trim() || "#7C3AED";
-    state.panel.embedDesc = $("#cfg-embed-desc").value.trim();
-    state.panel.welcome = $("#cfg-welcome").value.trim();
-    saveState();
-    addAudit("settings", "تحديث لوحة التذاكر والتصنيفات");
-    toast("حُفظت لوحة التذاكر");
-  });
-
-  /* Smart */
-  function fillSmart() {
-    const s = state.smart;
-    $("#smart-autoreply").checked = s.autoreply;
-    $("#smart-suggest").checked = s.suggest;
-    $("#smart-one").checked = s.oneTicket;
-    $("#smart-idle").checked = s.idleWarn;
-    $("#smart-autoclose").checked = s.autoClose;
-    $("#smart-sla").checked = s.sla;
-    $("#cfg-idle-warn").value = s.idleWarnMin;
-    $("#cfg-idle-close").value = s.idleCloseMin;
-    $("#cfg-sla").value = s.slaMin;
-    $("#cfg-default-prio").value = s.defaultPrio;
-  }
-
-  $("#form-smart").addEventListener("submit", (e) => {
-    e.preventDefault();
-    state.smart = {
-      autoreply: $("#smart-autoreply").checked,
-      suggest: $("#smart-suggest").checked,
-      oneTicket: $("#smart-one").checked,
-      idleWarn: $("#smart-idle").checked,
-      autoClose: $("#smart-autoclose").checked,
-      sla: $("#smart-sla").checked,
-      idleWarnMin: +$("#cfg-idle-warn").value || 30,
-      idleCloseMin: +$("#cfg-idle-close").value || 120,
-      slaMin: +$("#cfg-sla").value || 15,
-      defaultPrio: $("#cfg-default-prio").value,
-    };
-    saveState();
-    syncBotUI();
-    addAudit("settings", "تحديث إعدادات السلوك الذكي");
-    toast("حُفظ السلوك الذكي");
-  });
-
-  /* Messages */
-  function fillMessages() {
-    const m = state.messages;
-    $("#msg-welcome").value = m.welcome;
-    $("#msg-autoreply").value = m.autoreply;
-    $("#msg-claimed").value = m.claimed;
-    $("#msg-idle").value = m.idle;
-    $("#msg-close").value = m.close;
-    $("#msg-sla").value = m.sla;
-    $("#msg-exists").value = m.exists;
-    $("#msg-thanks").value = m.thanks;
-  }
-
-  $("#form-messages").addEventListener("submit", (e) => {
-    e.preventDefault();
-    state.messages = {
-      welcome: $("#msg-welcome").value,
-      autoreply: $("#msg-autoreply").value,
-      claimed: $("#msg-claimed").value,
-      idle: $("#msg-idle").value,
-      close: $("#msg-close").value,
-      sla: $("#msg-sla").value,
-      exists: $("#msg-exists").value,
-      thanks: $("#msg-thanks").value,
-    };
-    saveState();
-    addAudit("settings", "تحديث رسائل البوت العربية");
-    toast("حُفظت الرسائل");
-  });
-
-  /* Permissions */
-  function ensurePerms() {
-    if (!state.permissions || !Object.keys(state.permissions).length) {
-      state.permissions = {};
-      PERM_ITEMS.forEach((item) => {
-        state.permissions[item.id] = {
-          everyone: item.id === "btn_open" || item.id === "cmd_open",
-          member: item.id.startsWith("btn_") || item.id === "cmd_open",
+  function ensurePerms(s) {
+    if (!s.perms || !Object.keys(s.perms).length) {
+      s.perms = {};
+      PERM_ITEMS.forEach((it) => {
+        s.perms[it.id] = {
+          everyone: it.id.includes("open"),
+          member: true,
           support: true,
-          owner: true,
+          admin: true,
         };
       });
     }
   }
-
   function renderPerms() {
-    ensurePerms();
-    const body = $("#perm-body");
-    body.innerHTML = "";
-    PERM_ITEMS.forEach((item) => {
-      const row = state.permissions[item.id] || {};
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${item.label}</td>` + PERM_ROLES.map((r) =>
-        `<td><input type="checkbox" data-perm="${item.id}" data-role="${r}" ${row[r] ? "checked" : ""} /></td>`
-      ).join("");
-      body.appendChild(tr);
-    });
+    const body = $("perm-body");
+    if (!body) return;
+    const s = settings();
+    ensurePerms(s);
+    body.innerHTML = PERM_ITEMS.map((it) => {
+      const row = s.perms[it.id] || {};
+      return `<tr><td>${it.label}</td>${PERM_ROLES.map(
+        (r) =>
+          `<td><input type="checkbox" data-perm="${it.id}" data-role="${r}" ${row[r] ? "checked" : ""}/></td>`
+      ).join("")}</tr>`;
+    }).join("");
   }
 
-  $("#form-perms").addEventListener("submit", (e) => {
-    e.preventDefault();
-    $$("#perm-body input[type=checkbox]").forEach((cb) => {
-      if (!state.permissions[cb.dataset.perm]) state.permissions[cb.dataset.perm] = {};
-      state.permissions[cb.dataset.perm][cb.dataset.role] = cb.checked;
-    });
-    saveState();
-    addAudit("settings", "تحديث صلاحيات الأوامر والأزرار");
-    toast("حُفظت الصلاحيات");
-  });
-
-  /* Roles extra */
-  function fillRoles() {
-    $("#cfg-role-support").value = state.rolesExtra.support || "";
-    $("#cfg-role-admin").value = state.rolesExtra.admin || "";
-  }
-
-  $("#btn-save-roles").addEventListener("click", () => {
-    state.rolesExtra = {
-      support: $("#cfg-role-support").value.trim(),
-      admin: $("#cfg-role-admin").value.trim(),
-    };
-    saveState();
-    addAudit("settings", "حفظ رتب إضافية");
-    toast("حُفظت الرتب الإضافية");
-  });
-
-  $$(".copy-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(btn.dataset.copy);
-        toast("تم النسخ");
-      } catch {
-        toast("تعذّر النسخ — انسخ يدوياً");
-      }
-    });
-  });
-
-  /* Tickets */
   function renderTickets() {
-    const q = ($("#ticket-search").value || "").trim().toLowerCase();
-    const rows = MOCK_TICKETS.filter((t) => {
+    const q = ($("ticket-q")?.value || "").trim().toLowerCase();
+    const rows = TICKETS.filter((t) => {
       if (ticketFilter !== "all" && t.status !== ticketFilter) return false;
       if (!q) return true;
       return t.id.toLowerCase().includes(q) || t.cat.includes(q);
     });
-    const tbody = $("#tickets-body");
-    const cards = $("#tickets-cards");
-    tbody.innerHTML = rows.map((t) => `
-      <tr>
-        <td><span class="ticket-id en" dir="ltr">${t.id}</span></td>
-        <td>${t.cat}</td>
+    if ($("tickets-body")) {
+      $("tickets-body").innerHTML = rows
+        .map(
+          (t) => `<tr>
+        <td class="en" dir="ltr">${t.id}</td><td>${t.cat}</td>
         <td><span class="prio ${t.prio}">${PRIO_AR[t.prio]}</span></td>
-        <td><span class="claim-chip ${t.status}">${STATUS_AR[t.status]}</span></td>
-        <td>${t.assignee}</td>
-        <td>${t.ago}</td>
-      </tr>
-    `).join("");
-    cards.innerHTML = rows.map((t) => `
-      <article class="ticket-card">
-        <div class="ticket-card-top">
-          <strong class="ticket-id en" dir="ltr">${t.id}</strong>
-          <span class="claim-chip ${t.status}">${STATUS_AR[t.status]}</span>
-        </div>
-        <div class="ticket-card-meta">
-          <span>${t.cat}</span>
-          <span class="prio ${t.prio}">${PRIO_AR[t.prio]}</span>
-        </div>
-        <div class="ticket-card-foot"><span>${t.assignee}</span><span>${t.ago}</span></div>
-      </article>
-    `).join("");
-  }
-
-  $$(".filters .chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      $$(".filters .chip").forEach((c) => c.classList.remove("is-active"));
-      chip.classList.add("is-active");
-      ticketFilter = chip.dataset.filter;
-      renderTickets();
-    });
-  });
-  $("#ticket-search").addEventListener("input", renderTickets);
-
-  /* Overview activity + audit */
-  function renderOverviewActivity() {
-    const items = (state.audit.length ? state.audit : [
-      { type: "ticket", text: "تم استلام TKT-0012 — دعم فني", at: new Date(Date.now() - 120000).toISOString() },
-      { type: "ticket", text: "تذكرة جديدة TKT-0013 — مبيعات", at: new Date(Date.now() - 480000).toISOString() },
-      { type: "ticket", text: "أُغلقت TKT-0009", at: new Date(Date.now() - 900000).toISOString() },
-      { type: "warn", text: "تحذير خمول على TKT-0010", at: new Date(Date.now() - 1320000).toISOString() },
-    ]).slice(0, 6);
-    $("#overview-activity").innerHTML = items.map((a) => `
-      <li>
-        <span class="dot ${a.type === "warn" ? "open" : a.type === "power" ? "claim" : "open"}"></span>
-        <span>${escapeHtml(a.text)}</span>
-        <time>${relTime(a.at)}</time>
-      </li>
-    `).join("");
+        <td><span class="status-chip ${t.status}">${STATUS_AR[t.status]}</span></td>
+        <td>${t.who}</td><td>${t.ago}</td></tr>`
+        )
+        .join("");
+    }
+    if ($("tickets-cards")) {
+      $("tickets-cards").innerHTML = rows
+        .map(
+          (t) => `<article class="ticket-card glass-card">
+        <div><strong class="en" dir="ltr">${t.id}</strong>
+        <span class="status-chip ${t.status}">${STATUS_AR[t.status]}</span></div>
+        <div>${t.cat} · <span class="prio ${t.prio}">${PRIO_AR[t.prio]}</span></div>
+        <div class="muted">${t.who} · ${t.ago}</div></article>`
+        )
+        .join("");
+    }
   }
 
   function renderAudit() {
-    const list = $("#audit-list");
-    const items = state.audit.length ? state.audit : [
-      { type: "power", text: "تشغيل البوت عند الإقلاع", at: new Date(Date.now() - 3600000).toISOString() },
-      { type: "ticket", text: "فتح TKT-0013 بواسطة عضو", at: new Date(Date.now() - 480000).toISOString() },
-      { type: "settings", text: "تحميل إعدادات افتراضية", at: new Date(Date.now() - 7200000).toISOString() },
-    ];
-    list.innerHTML = items.map((a) => `
-      <li class="audit-item">
-        <span class="audit-badge ${a.type}">${a.type}</span>
-        <span>${escapeHtml(a.text)}</span>
-        <time datetime="${a.at}">${fmtTime(a.at)}</time>
-      </li>
-    `).join("");
+    const el = $("audit-list");
+    if (!el) return;
+    const items = settings().audit.length
+      ? settings().audit
+      : [
+          { type: "power", text: "البوت جاهز على السيرفر", at: new Date(Date.now() - 36e5).toISOString() },
+          { type: "settings", text: "تحميل إعدادات افتراضية", at: new Date(Date.now() - 35e5).toISOString() },
+        ];
+    el.innerHTML = items
+      .map(
+        (a) =>
+          `<li><span class="audit-badge">${a.type}</span><span>${esc(a.text)}</span><time>${fmt(a.at)}</time></li>`
+      )
+      .join("");
   }
-
-  $("#btn-refresh-audit").addEventListener("click", () => {
-    addAudit("settings", "تحديث سجل التدقيق يدوياً");
-    toast("تم التحديث");
-  });
-
-  /* Live-ish mock stats tick */
+  function renderFeed() {
+    const el = $("ov-feed");
+    if (!el) return;
+    const items = (settings().audit.length
+      ? settings().audit
+      : [
+          { text: "TKT-0013 — مبيعات", at: new Date(Date.now() - 48e4).toISOString() },
+          { text: "استلام TKT-0012", at: new Date(Date.now() - 72e4).toISOString() },
+        ]
+    ).slice(0, 5);
+    el.innerHTML = items
+      .map((a) => `<li><span class="dot"></span><span>${esc(a.text)}</span><time>${rel(a.at)}</time></li>`)
+      .join("");
+  }
   function tickStats() {
-    const jitter = (n, d = 1) => Math.max(0, n + Math.round((Math.random() - 0.5) * d));
-    $("#stat-open").textContent = jitter(12, 2);
-    $("#stat-claimed").textContent = jitter(7, 2);
-    $("#stat-closed").textContent = jitter(23, 3);
-    $("#stat-auto").textContent = jitter(41, 4);
-    $("#stat-suggest").textContent = jitter(29, 3);
-    const sla = 92 + Math.floor(Math.random() * 5);
-    $("#stat-sla").innerHTML = `${sla}<span class="unit">%</span>`;
+    const j = (n, d = 2) => Math.max(0, n + Math.round((Math.random() - 0.5) * d));
+    if ($("st-open")) $("st-open").textContent = j(12);
+    if ($("st-claimed")) $("st-claimed").textContent = j(7);
+    if ($("st-closed")) $("st-closed").textContent = j(23, 3);
+    if ($("st-sla")) $("st-sla").textContent = `${92 + Math.floor(Math.random() * 5)}%`;
   }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  }
-  function escapeAttr(s) {
-    return escapeHtml(s).replace(/`/g, "&#96;");
-  }
-  function relTime(iso) {
-    const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  function rel(iso) {
+    const m = Math.round((Date.now() - new Date(iso)) / 6e4);
     if (m < 1) return "الآن";
     if (m < 60) return `منذ ${m} د`;
-    const h = Math.round(m / 60);
-    return `منذ ${h} س`;
+    return `منذ ${Math.round(m / 60)} س`;
   }
-  function fmtTime(iso) {
+  function fmt(iso) {
     try {
-      return new Date(iso).toLocaleString("ar-SA", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" });
+      return new Date(iso).toLocaleString("ar-SA", {
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "numeric",
+        month: "short",
+      });
     } catch {
       return iso;
     }
   }
 
-  /* Init */
-  fillCredentials();
-  fillPanel();
-  fillSmart();
-  fillMessages();
-  fillRoles();
-  renderPerms();
-  renderTickets();
-  renderAudit();
-  renderOverviewActivity();
-  syncBotUI();
-  tickStats();
-  setInterval(tickStats, 12000);
-  setInterval(renderOverviewActivity, 30000);
+  function bind() {
+    ["btn-nav-invite", "btn-hero-invite", "btn-cta-invite", "btn-invite-global"].forEach((id) => {
+      $(id)?.addEventListener("click", () => inviteBot());
+    });
+    ["btn-nav-dash", "btn-hero-dash", "btn-cta-dash"].forEach((id) => {
+      $(id)?.addEventListener("click", () => (session ? showServers() : openAuth()));
+    });
+    $("brand-home")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      session ? showServers() : showMarketing();
+    });
+    $("mkt-burger")?.addEventListener("click", () => {
+      document.querySelector(".mkt-nav, .mkt-links")?.classList.toggle("is-open");
+    });
+    $$("[data-close-auth]").forEach((el) => el.addEventListener("click", closeAuth));
+    $("btn-discord-login")?.addEventListener("click", loginDiscord);
+    $("btn-mock-login")?.addEventListener("click", () => {
+      store.mockMode = true;
+      saveStore();
+      enterSession({ user: MOCK_USER, guilds: MOCK_GUILDS.map((g) => ({ ...g })), mock: true });
+    });
+    $("toggle-mock")?.addEventListener("change", (e) => {
+      store.mockMode = e.target.checked;
+      saveStore();
+      updateModeChip();
+    });
 
-  if (!state.audit.length) {
-    state.audit = [
-      { type: "power", text: "تشغيل البوت عند الإقلاع", at: new Date(Date.now() - 3600000).toISOString() },
-      { type: "settings", text: "تحميل إعدادات Ops الافتراضية", at: new Date(Date.now() - 3500000).toISOString() },
-      { type: "ticket", text: "فتح TKT-0013 — مبيعات", at: new Date(Date.now() - 480000).toISOString() },
-    ];
-    saveState();
-    renderAudit();
-    renderOverviewActivity();
+    $("user-btn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const dd = $("user-dropdown");
+      if (dd) dd.hidden = !dd.hidden;
+    });
+    document.addEventListener("click", () => {
+      if ($("user-dropdown")) $("user-dropdown").hidden = true;
+    });
+    $("btn-goto-servers")?.addEventListener("click", showServers);
+    $("btn-logout")?.addEventListener("click", logout);
+    $("btn-servers-home")?.addEventListener("click", showServers);
+    $("btn-change-server")?.addEventListener("click", showServers);
+    $("btn-forbidden-back")?.addEventListener("click", showServers);
+
+    $$("[data-mod]").forEach((b) => b.addEventListener("click", () => showMod(b.dataset.mod)));
+    $$("[data-goto]").forEach((b) => b.addEventListener("click", () => showMod(b.dataset.goto)));
+    $("btn-open-side")?.addEventListener("click", openSide);
+    $("side-toggle-mobile")?.addEventListener("click", closeSide);
+
+    $("cfg-color")?.addEventListener("input", (e) => {
+      setVal("cfg-hex", e.target.value);
+      updateGrad(e.target.value);
+    });
+    $("cfg-hex")?.addEventListener("change", (e) => {
+      let v = e.target.value.trim();
+      if (!v.startsWith("#")) v = "#" + v;
+      if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+        setVal("cfg-color", v);
+        updateGrad(v);
+      }
+    });
+
+    $("form-panel")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const p = settings().panel;
+      p.title = $("cfg-title").value.trim();
+      p.color = $("cfg-hex").value.trim() || "#7C3AED";
+      p.desc = $("cfg-desc").value.trim();
+      p.welcome = $("cfg-welcome").value.trim();
+      p.channelId = $("cfg-channel").value.trim();
+      p.categoryId = $("cfg-category").value.trim();
+      if (!(await persist("panel"))) return;
+      if (isLive()) {
+        try {
+          await api(route("panel", guildId), { method: "POST", body: JSON.stringify(p) });
+        } catch (_) {}
+      }
+      addAudit("settings", "تحديث المنبر");
+      toast("حُفظ المنبر");
+    });
+
+    $("btn-add-cat")?.addEventListener("click", () => {
+      settings().panel.categories.push({ name: "تصنيف جديد", key: "new", color: "#A855F7" });
+      renderCats();
+    });
+
+    $("form-roles")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      settings().roles = {
+        owner: $("role-owner").value.trim(),
+        member: $("role-member").value.trim(),
+        support: $("role-support").value.trim(),
+        admin: $("role-admin").value.trim(),
+      };
+      if (!(await persist("roles"))) return;
+      addAudit("settings", "تحديث الرتب");
+      toast("حُفظت الرتب (الأونر فقط)");
+    });
+
+    $("btn-save-perms")?.addEventListener("click", async () => {
+      const s = settings();
+      ensurePerms(s);
+      $$("#perm-body input").forEach((cb) => {
+        if (!s.perms[cb.dataset.perm]) s.perms[cb.dataset.perm] = {};
+        s.perms[cb.dataset.perm][cb.dataset.role] = cb.checked;
+      });
+      if (!(await persist("perms"))) return;
+      addAudit("settings", "تحديث الصلاحيات");
+      toast("حُفظت الصلاحيات");
+    });
+
+    $("form-smart")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      settings().smart = {
+        auto: $("sm-auto").checked,
+        suggest: $("sm-suggest").checked,
+        one: $("sm-one").checked,
+        idle: $("sm-idle").checked,
+        close: $("sm-close").checked,
+        sla: $("sm-sla").checked,
+        idleMin: +$("sm-idle-min").value || 30,
+        closeMin: +$("sm-close-min").value || 120,
+        slaMin: +$("sm-sla-min").value || 15,
+        prio: $("sm-prio").value,
+      };
+      if (!(await persist("smart"))) return;
+      if ($("ov-smart")) $("ov-smart").textContent = settings().smart.auto ? "مفعّل" : "متوقف";
+      addAudit("settings", "تحديث الإعدادات الذكية");
+      toast("حُفظت الإعدادات الذكية");
+    });
+
+    const filters = $("ticket-filters");
+    if (filters) {
+      filters.querySelectorAll("[data-f], .chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          filters.querySelectorAll(".chip, [data-f]").forEach((c) => c.classList.remove("is-active"));
+          chip.classList.add("is-active");
+          ticketFilter = chip.dataset.f || "all";
+          renderTickets();
+        });
+      });
+    }
+    $("ticket-q")?.addEventListener("input", renderTickets);
+    $("btn-refresh-audit")?.addEventListener("click", () => {
+      addAudit("settings", "تحديث السجل");
+      toast("تم التحديث");
+    });
+    $$("[data-copy]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.copy);
+          toast("تم النسخ");
+        } catch {
+          toast("انسخ يدوياً");
+        }
+      });
+    });
   }
+
+  bind();
+  updateModeChip();
+  restoreSession();
+  setInterval(() => {
+    if (guildId && $("screen-guild") && !$("screen-guild").hidden) tickStats();
+  }, 12000);
 })();
