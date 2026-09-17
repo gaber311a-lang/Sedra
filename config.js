@@ -1,4 +1,4 @@
-/* Ops frontend — Eng fills OPS_API_BASE when backend is live.
+/* Tokyo frontend — Eng fills OPS_API_BASE when backend is live.
    Bot token / CLIENT_SECRET must NEVER appear here or in the browser. */
 window.OPS_API_BASE = "https://ticket-ops-api-production.up.railway.app";
 
@@ -28,6 +28,6 @@ window.OPS_CONFIG = {
       "&permissions=2147609616&scope=bot%20applications.commands"
     );
   },
-  LIVE_URL: "https://gaber311a-lang.github.io/ops/",
+  LIVE_URL: "https://gaber311a-lang.github.io/tokyo/",
   BOT_REPO: "https://github.com/gaber311a-lang/discord-ticket-bot",
 };
