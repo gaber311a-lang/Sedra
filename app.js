@@ -251,7 +251,12 @@
       if (!user) throw new Error("NO_USER");
       session = { user, guilds: [] };
       setUserChrome(user);
-      const r = parseHash();
+      // After real Discord login, always land on server control list
+      let r = parseHash();
+      if (r.screen === "landing" || r.screen === "login") {
+        location.hash = "#/servers";
+        r = { screen: "servers" };
+      }
       if (r.screen === "servers" || r.screen === "guild") {
         try {
           await fetchGuilds();
@@ -854,6 +859,14 @@
     });
   }
 
+  // OAuth error bounce from API
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get("error")) {
+      toast("فشل الدخول: " + q.get("error"));
+      history.replaceState({}, "", location.pathname + location.hash);
+    }
+  } catch (_) {}
   bind();
   restoreSession();
 })();

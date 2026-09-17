@@ -487,3 +487,14 @@ body::before {
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
+
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.brand-logo.sm { width: 28px; height: 28px; }
+.brand { display: inline-flex; align-items: center; gap: .55rem; text-decoration: none; color: inherit; }
