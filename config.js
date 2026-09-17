@@ -6,7 +6,7 @@ window.OPS_CONFIG = {
   get API_BASE() {
     return String(window.OPS_API_BASE || "").replace(/\/$/, "");
   },
-  DISCORD_CLIENT_ID: "",
+  DISCORD_CLIENT_ID: "1550187468102438994",
   OWNER_ONLY: true,
   BOT_PERMISSIONS: "2147609616",
   routes: {

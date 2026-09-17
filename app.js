@@ -277,13 +277,29 @@
     window.location.href = base + (rpath("login") || "/auth/discord");
   }
 
-  function inviteBot() {
+  async function inviteBot() {
     const base = apiBase();
-    if (base) {
-      window.location.href = base + (rpath("invite") || "/invite");
+    const fallback = () => {
+      const url =
+        CFG.inviteUrl?.(CFG.DISCORD_CLIENT_ID || "1550187468102438994") ||
+        "https://discord.com/api/oauth2/authorize?client_id=1550187468102438994&permissions=2147609616&scope=bot%20applications.commands";
+      window.location.href = url;
+    };
+    if (!base) {
+      fallback();
       return;
     }
-    window.open(CFG.inviteUrl?.(CFG.DISCORD_CLIENT_ID) || "#", "_blank", "noopener");
+    try {
+      const res = await fetch(base + (rpath("invite") || "/invite"), {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    } catch (_) {}
+    fallback();
   }
 
   async function logout() {
