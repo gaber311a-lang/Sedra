@@ -274,6 +274,18 @@
   }
 
   /* -------- Auth -------- */
+  const OAUTH_ERROR_AR = {
+    invalid_state: "انتهت جلسة الدخول أو الرابط غير صالح. اضغط دخول ديسكورد مرة ثانية.",
+    access_denied: "تم إلغاء الدخول من ديسكورد.",
+    token_exchange_failed: "فشل تبادل رمز ديسكورد. حاول مرة ثانية بعد قليل.",
+    oauth_not_configured: "خدمة الدخول غير مهيأة بعد. تواصل مع المهندس.",
+    exchange_failed: "ما قدرنا نكمّل الدخول. اضغط تسجيل الدخول مرة ثانية.",
+  };
+  function oauthErrorToast(code) {
+    const key = String(code || "").trim();
+    return OAUTH_ERROR_AR[key] || "ما تم الدخول. حاول مرة ثانية.";
+  }
+
   function setUserChrome(user) {
     if ($("user-label")) $("user-label").textContent = user.global_name || user.username || "مستخدم";
     if ($("user-avatar")) $("user-avatar").textContent = (user.global_name || user.username || "?").slice(0, 1);
@@ -349,16 +361,12 @@
       return;
     }
 
-    // Finish Discord login handoff: #/servers?login_code=...
+    // Finish Discord login handoff: #/servers?login_code=... (or ?error=...)
     const hq = hashQuery();
     const loginCode = (hq.get("login_code") || hq.get("code") || "").trim();
-    const oauthErr = hq.get("error");
-    if (oauthErr) {
-      toast("ما تم الدخول. حاول مرة ثانية.");
-      clearHashQueryKeepPath("#/login");
-      applyRoute();
-      return;
-    }
+    const oauthErr = (hq.get("error") || "").trim();
+
+    // Prefer login_code when both present (ignore stale error from prior bounce)
     if (loginCode) {
       try {
         toast("يجري تسجيل الدخول…");
@@ -376,11 +384,26 @@
         return;
       } catch (e) {
         clearAuthToken();
-        toast(e && e.status === 404 ? "خدمة الدخول مو جاهزة بعد" : "ما قدرنا نكمّل الدخول. اضغط تسجيل الدخول مرة ثانية.");
+        const code = (e && e.code) || "";
+        let msg = "ما قدرنا نكمّل الدخول. اضغط تسجيل الدخول مرة ثانية.";
+        if (e && e.status === 404) msg = "خدمة الدخول مو جاهزة بعد";
+        else if (code === "exchange_failed" || code === "invalid_code") msg = OAUTH_ERROR_AR.exchange_failed;
+        toast(msg);
         clearHashQueryKeepPath("#/login");
         applyRoute();
         return;
       }
+    }
+
+    if (oauthErr) {
+      toast(oauthErrorToast(oauthErr));
+      try {
+        history.replaceState({}, "", location.pathname + "#/login");
+      } catch (_) {
+        clearHashQueryKeepPath("#/login");
+      }
+      applyRoute();
+      return;
     }
 
     // Persist across refresh: restore Bearer from localStorage then /auth/me
@@ -1025,22 +1048,18 @@
     });
   }
 
-  // OAuth error bounce from API
-  try {
-    const q = new URLSearchParams(location.search);
-    if (q.get("error")) {
-      toast("ما تم الدخول. حاول مرة ثانية.");
-      history.replaceState({}, "", location.pathname + location.hash);
-    }
-  } catch (_) {}
+  // OAuth errors handled in restoreSession via hashQuery (mapped Arabic toasts)
   // Fresh load: guests stay on home; logged-in users keep dashboard hash
+  // Do NOT strip #/login?error= or #/servers?login_code= before restoreSession
   try {
+    const hqEarly = hashQuery();
+    const hasHandoff = !!(hqEarly.get("login_code") || hqEarly.get("code") || hqEarly.get("error"));
     const h = location.hash || "#/";
     const hasToken = !!getAuthToken();
-    if (!hasToken && (h === "#/login" || h.startsWith("#/login?"))) {
+    if (!hasHandoff && !hasToken && (h === "#/login" || h.startsWith("#/login?"))) {
       history.replaceState({}, "", location.pathname + "#/");
     }
-    if (hasToken && (h === "#/" || h === "" || h === "#/login" || h.startsWith("#/login?"))) {
+    if (!hasHandoff && hasToken && (h === "#/" || h === "" || h === "#/login" || h.startsWith("#/login?"))) {
       history.replaceState({}, "", location.pathname + "#/servers");
     }
   } catch (_) {}
