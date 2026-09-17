@@ -27,7 +27,37 @@
     );
   } catch (_) {}
 
-  function apiBase() {
+  const TOKYO_TOKEN_KEY = "tokyo_auth_token";
+
+  function getAuthToken() {
+    try {
+      return sessionStorage.getItem(TOKYO_TOKEN_KEY) || "";
+    } catch {
+      return "";
+    }
+  }
+  function setAuthToken(token) {
+    try {
+      if (token) sessionStorage.setItem(TOKYO_TOKEN_KEY, token);
+      else sessionStorage.removeItem(TOKYO_TOKEN_KEY);
+    } catch (_) {}
+  }
+  function clearAuthToken() {
+    setAuthToken("");
+  }
+
+  /** Parse `#/servers?login_code=...` style hash query */
+  function hashQuery() {
+    const h = location.hash || "";
+    const i = h.indexOf("?");
+    if (i < 0) return new URLSearchParams();
+    return new URLSearchParams(h.slice(i + 1));
+  }
+  function clearHashQueryKeepPath(path) {
+    location.hash = path || "#/servers";
+  }
+
+    function apiBase() {
     return String(window.OPS_API_BASE || CFG.API_BASE || "").replace(/\/$/, "");
   }
   function route(key, id) {
@@ -39,10 +69,13 @@
   async function api(path, opts = {}) {
     const base = apiBase();
     if (!base) throw Object.assign(new Error("NO_API"), { code: "NO_API" });
+    const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+    const token = getAuthToken();
+    if (token) headers.Authorization = "Bearer " + token;
     const res = await fetch(base + path, {
       credentials: "include",
-      headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
       ...opts,
+      headers,
     });
     if (res.status === 401) {
       session = null;
@@ -240,18 +273,62 @@
     go("#/");
   }
 
+
+  async function exchangeLoginCode(code) {
+    const base = apiBase();
+    if (!base || !code) return false;
+    const res = await fetch(base + "/auth/exchange", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw Object.assign(new Error(err.error || "exchange_failed"), { code: err.error || "exchange_failed", status: res.status });
+    }
+    const data = await res.json();
+    if (!data || !data.token) throw new Error("no_token");
+    setAuthToken(data.token);
+    return data;
+  }
+
   async function restoreSession() {
     if (!apiBase()) {
       applyRoute();
       return;
     }
+
+    // Finish Discord login handoff: #/servers?login_code=...
+    const hq = hashQuery();
+    const loginCode = (hq.get("login_code") || hq.get("code") || "").trim();
+    const oauthErr = hq.get("error");
+    if (oauthErr) {
+      toast("فشل الدخول");
+      clearHashQueryKeepPath("#/login");
+      applyRoute();
+      return;
+    }
+    if (loginCode) {
+      try {
+        await exchangeLoginCode(loginCode);
+        clearHashQueryKeepPath("#/servers");
+        toast("تم تسجيل الدخول");
+      } catch (e) {
+        clearAuthToken();
+        toast(e && e.status === 404 ? "خدمة الدخول تحتاج تحديث — حاول بعد دقائق" : "فشل إكمال الدخول");
+        clearHashQueryKeepPath("#/login");
+        applyRoute();
+        return;
+      }
+    }
+
     try {
       const meRaw = await api(route("me") || "/auth/me");
       const user = normalizeUser(meRaw);
       if (!user) throw new Error("NO_USER");
       session = { user, guilds: [] };
       setUserChrome(user);
-      // After real Discord login, always land on server control list
       let r = parseHash();
       if (r.screen === "landing" || r.screen === "login") {
         location.hash = "#/servers";
