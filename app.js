@@ -57,6 +57,10 @@
   }
   function clearAuthToken() {
     setAuthToken("");
+    try {
+      localStorage.removeItem(TOKYO_TOKEN_KEY + "_exp");
+      localStorage.removeItem(TOKYO_TOKEN_KEY + "_user");
+    } catch (_) {}
   }
 
   /** Parse `#/servers?login_code=...` style hash query */
@@ -332,6 +336,10 @@
     const data = await res.json();
     if (!data || !data.token) throw new Error("no_token");
     setAuthToken(data.token);
+    try {
+      if (data.expiresAt) localStorage.setItem(TOKYO_TOKEN_KEY + "_exp", String(data.expiresAt));
+      if (data.user) localStorage.setItem(TOKYO_TOKEN_KEY + "_user", JSON.stringify(data.user));
+    } catch (_) {}
     return data;
   }
 
@@ -375,7 +383,15 @@
       }
     }
 
+    // Persist across refresh: restore Bearer from localStorage then /auth/me
+    const existing = getAuthToken();
+    if (!existing) {
+      applyRoute();
+      return;
+    }
     try {
+      const exp = Number(localStorage.getItem(TOKYO_TOKEN_KEY + "_exp") || 0);
+      if (exp && Date.now() > exp) throw new Error("EXPIRED");
       const meRaw = await api(route("me") || "/auth/me");
       const user = normalizeUser(meRaw);
       if (!user) throw new Error("NO_USER");
@@ -383,7 +399,7 @@
       setUserChrome(user);
       let r = parseHash();
       if (r.screen === "landing" || r.screen === "login") {
-        location.hash = "#/servers";
+        history.replaceState({}, "", location.pathname + "#/servers");
         r = { screen: "servers" };
       }
       if (r.screen === "servers" || r.screen === "guild") {
@@ -610,8 +626,10 @@
 
     if (mod === "logs") {
       try {
-        const logs = await api(`/api/guilds/${guildId}/logs`);
-        const list = Array.isArray(logs) ? logs : logs?.logs || logs?.data || [];
+        const logs = await api(`/api/guilds/${guildId}/audit?limit=50`);
+        const list = Array.isArray(logs)
+          ? logs
+          : logs?.entries || logs?.logs || logs?.data || [];
         renderLogs(list);
         clearUnavailable($("mod-logs"));
       } catch (e) {
@@ -624,10 +642,14 @@
       try {
         const stats = await api(`/api/guilds/${guildId}/stats`);
         if (stats) {
-          if ($("st-open")) $("st-open").textContent = stats.open ?? stats.openTickets ?? "—";
-          if ($("st-claimed")) $("st-claimed").textContent = stats.claimed ?? stats.claimedTickets ?? "—";
-          if ($("st-closed")) $("st-closed").textContent = stats.closedToday ?? stats.closed ?? "—";
-          if ($("st-sla")) $("st-sla").textContent = stats.sla ?? stats.slaPercent ?? "—";
+          if ($("st-open")) $("st-open").textContent = String(stats.openCount ?? stats.open ?? stats.openTickets ?? "—");
+          if ($("st-claimed")) $("st-claimed").textContent = String(stats.claimedCount ?? stats.claimed ?? stats.claimedTickets ?? "—");
+          if ($("st-closed")) $("st-closed").textContent = String(stats.closedToday ?? stats.closed ?? "—");
+          const sla =
+            stats.avgCloseMs != null
+              ? Math.round(Number(stats.avgCloseMs) / 60000) + " د"
+              : stats.sla ?? stats.slaPercent ?? "—";
+          if ($("st-sla")) $("st-sla").textContent = String(sla);
           if ($("ov-smart") && stats.smartEnabled != null)
             $("ov-smart").textContent = stats.smartEnabled ? "شغّال" : "مطفى";
         }
@@ -810,7 +832,12 @@
     el.innerHTML = list
       .map((a) => {
         const type = a.type || a.action || "log";
-        const text = a.text || a.message || a.summary || "";
+        const text =
+          a.text ||
+          a.message ||
+          a.summary ||
+          (a.meta ? JSON.stringify(a.meta) : "") ||
+          "";
         const at = a.at || a.createdAt || a.timestamp || "";
         return `<li><span class="audit-badge">${esc(type)}</span><span>${esc(text)}</span><time>${esc(at)}</time></li>`;
       })
