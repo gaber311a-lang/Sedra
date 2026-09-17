@@ -279,6 +279,7 @@
         await api(route("logout") || "/auth/logout", { method: "POST" });
       } catch (_) {}
     }
+    clearAuthToken();
     session = null;
     guildId = null;
     go("#/");
@@ -322,6 +323,7 @@
     }
     if (loginCode) {
       try {
+        toast("يجري تسجيل الدخول…");
         await exchangeLoginCode(loginCode);
         history.replaceState({}, "", location.pathname + "#/servers");
         toast("تم تسجيل الدخول");
