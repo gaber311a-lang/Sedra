@@ -27,19 +27,32 @@
     );
   } catch (_) {}
 
-  const TOKYO_TOKEN_KEY = "tokyo_auth_token";
+  const TOKYO_TOKEN_KEY = "tokyo_token";
 
   function getAuthToken() {
     try {
-      return sessionStorage.getItem(TOKYO_TOKEN_KEY) || "";
+      // Prefer localStorage so refresh keeps the dashboard session
+      return (
+        localStorage.getItem(TOKYO_TOKEN_KEY) ||
+        sessionStorage.getItem(TOKYO_TOKEN_KEY) ||
+        sessionStorage.getItem("tokyo_auth_token") ||
+        ""
+      );
     } catch {
       return "";
     }
   }
   function setAuthToken(token) {
     try {
-      if (token) sessionStorage.setItem(TOKYO_TOKEN_KEY, token);
-      else sessionStorage.removeItem(TOKYO_TOKEN_KEY);
+      if (token) {
+        localStorage.setItem(TOKYO_TOKEN_KEY, token);
+        sessionStorage.removeItem(TOKYO_TOKEN_KEY);
+        sessionStorage.removeItem("tokyo_auth_token");
+      } else {
+        localStorage.removeItem(TOKYO_TOKEN_KEY);
+        sessionStorage.removeItem(TOKYO_TOKEN_KEY);
+        sessionStorage.removeItem("tokyo_auth_token");
+      }
     } catch (_) {}
   }
   function clearAuthToken() {
@@ -342,6 +355,7 @@
       try {
         toast("يجري تسجيل الدخول…");
         await exchangeLoginCode(loginCode);
+        // Consume one-time code immediately from the URL
         history.replaceState({}, "", location.pathname + "#/servers");
         toast("تم تسجيل الدخول");
         const meRaw = await api(route("me") || "/auth/me");
@@ -992,12 +1006,15 @@
       history.replaceState({}, "", location.pathname + location.hash);
     }
   } catch (_) {}
-  // Fresh load: don't trap guests on /login
+  // Fresh load: guests stay on home; logged-in users keep dashboard hash
   try {
     const h = location.hash || "#/";
     const hasToken = !!getAuthToken();
     if (!hasToken && (h === "#/login" || h.startsWith("#/login?"))) {
       history.replaceState({}, "", location.pathname + "#/");
+    }
+    if (hasToken && (h === "#/" || h === "" || h === "#/login" || h.startsWith("#/login?"))) {
+      history.replaceState({}, "", location.pathname + "#/servers");
     }
   } catch (_) {}
   bind();
