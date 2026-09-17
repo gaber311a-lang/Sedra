@@ -181,14 +181,18 @@
 
   /* -------- Router -------- */
   function parseHash() {
-    const raw = (location.hash || "#/").replace(/^#/, "") || "/";
+    let raw = (location.hash || "#/").replace(/^#/, "") || "/";
+    // Critical: "#/servers?login_code=..." must still parse as servers
+    raw = raw.split("?")[0];
     const parts = raw.split("/").filter(Boolean);
     if (parts[0] === "login") return { screen: "login" };
     if (parts[0] === "servers") return { screen: "servers" };
     if (parts[0] === "forbidden") return { screen: "forbidden" };
     if (parts[0] === "g" && parts[1]) {
-      const mod = parts[2] && MOD_TITLES[parts[2]] ? parts[2] : "overview";
-      return { screen: "guild", guildId: parts[1], mod };
+      const id = String(parts[1]).split("?")[0];
+      const modRaw = parts[2] ? String(parts[2]).split("?")[0] : "";
+      const mod = modRaw && MOD_TITLES[modRaw] ? modRaw : "overview";
+      return { screen: "guild", guildId: id, mod };
     }
     return { screen: "landing" };
   }
@@ -219,12 +223,19 @@
     }
     if (r.screen === "forbidden") return showScreen("forbidden");
     if (r.screen === "servers") {
-      if (!session) return go("#/login");
+      if (!session) {
+        // Avoid dead login loop — send to home with clear action
+        toast("سجّل دخولك عشان تفتح لوحة التحكم");
+        return go("#/");
+      }
       showScreen("servers");
       return loadAndRenderGuilds();
     }
     if (r.screen === "guild") {
-      if (!session) return go("#/login");
+      if (!session) {
+        toast("سجّل دخولك عشان تفتح لوحة التحكم");
+        return go("#/");
+      }
       const g = (session.guilds || []).find((x) => x.id === r.guildId);
       if (!g) return go("#/servers");
       if (!g.owner) return go("#/forbidden");
@@ -250,7 +261,8 @@
   function loginDiscord() {
     const base = apiBase();
     if (!base) return toast("الخدمة مو متصلة");
-    window.location.href = base + (route("login") || "/auth/discord");
+    // Full page navigation to API (sets state cookie / starts OAuth)
+    window.location.assign(base + (route("login") || "/auth/discord"));
   }
 
   async function inviteBot() {
@@ -880,6 +892,8 @@
     );
 
     $("btn-discord-login")?.addEventListener("click", loginDiscord);
+    $("btn-hero-login")?.addEventListener("click", loginDiscord);
+    $("btn-nav-login")?.addEventListener("click", loginDiscord);
     $("btn-logout")?.addEventListener("click", logout);
     $("btn-logout-side")?.addEventListener("click", logout);
     $("btn-invite-global")?.addEventListener("click", inviteBot);

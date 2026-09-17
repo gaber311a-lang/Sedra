@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=tokyo5" />
+  <link rel="stylesheet" href="styles.css?v=tokyo6" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
@@ -27,7 +27,7 @@
           <a href="#how">كيف يعمل</a>
         </nav>
         <div class="topnav-actions">
-          <a class="btn btn-ghost btn-sm" href="#/login">تسجيل الدخول</a>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-nav-login">الدخول</button>
           <a class="btn btn-discord btn-sm" href="#/login" data-invite>أضف البوت</a>
         </div>
       </header>
@@ -41,7 +41,7 @@
           <p class="tag">تذاكر سيرفرك</p>
           <p class="lead">لوحة تحكم لديسكورد: التذاكر، المنبر، والرتب.</p>
           <div class="hero-ctas">
-            <a class="btn btn-grad btn-lg" href="#/login">الدخول</a>
+            <button type="button" class="btn btn-grad btn-lg" id="btn-hero-login">الدخول بديسكورد</button>
             <a class="btn btn-glass btn-lg" href="#/login" data-invite>أضف البوت</a>
           </div>
         </div>
@@ -84,7 +84,7 @@
       <div class="login-card glass">
         <a class="brand center" href="#/"><img class="brand-logo" src="assets/tokyo-logo.png" width="36" height="36" alt="Tokyo" /><span class="brand-name">Tokyo</span></a>
         <h1>تسجيل الدخول</h1>
-        <p class="muted">ادخل بديسكورد عشان تفتح لوحة التحكم.</p>
+        <p class="muted">اضغط الزر تحت. بعد ديسكورد يرجعك للوحة التحكم.</p>
         <button type="button" class="btn btn-discord btn-block" id="btn-discord-login">
           <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.8 19.8 0 0 0-4.885-1.515.07.07 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.3 18.3 0 0 0-5.487 0 12.6 12.6 0 0 0-.617-1.25.08.08 0 0 0-.079-.037A19.7 19.7 0 0 0 3.677 4.37a.09.09 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.08.08 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.08.08 0 0 0 .084-.027 14 14 0 0 0 1.226-1.994.08.08 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.08.08 0 0 1-.008-.127c.126-.094.252-.192.373-.292a.07.07 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.07.07 0 0 1 .079.01c.12.098.247.198.373.292a.08.08 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.08.08 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.08.08 0 0 0 .084.028 19.8 19.8 0 0 0 6.002-3.03.08.08 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
           تسجيل الدخول بديسكورد
@@ -301,7 +301,7 @@
 
   <div id="toast" class="toast" hidden role="status"></div>
   <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
-  <script src="config.js?v=tokyo5"></script>
-  <script src="app.js?v=tokyo5"></script>
+  <script src="config.js?v=tokyo6"></script>
+  <script src="app.js?v=tokyo6"></script>
 </body>
 </html>
