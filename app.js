@@ -2,15 +2,14 @@
   "use strict";
 
   const CFG = window.OPS_CONFIG || {};
-  const STORE_KEY = "ops-pro-v1";
-
-  const MOD_TITLE = {
+  const STORE_KEY = "ops-multiscreen-v1";
+  const MOD_TITLES = {
     overview: "نظرة عامة",
     tickets: "التذاكر",
     panel: "المنبر",
-    roles: "الرتب والصلاحيات",
-    smart: "الإعدادات الذكية",
-    audit: "السجل",
+    roles: "الرتب",
+    smart: "الذكي",
+    logs: "السجل",
   };
 
   const MOCK_USER = { id: "1", username: "Gaber", global_name: "جابر" };
@@ -25,7 +24,7 @@
     panel: {
       title: "مركز التذاكر",
       color: "#7C3AED",
-      desc: "اختر التصنيف وافتح تذكرة — الدعم يرد بأسرع وقت.",
+      desc: "اختر التصنيف وافتح تذكرة.",
       welcome: "مرحباً بك. صف طلبك بوضوح.",
       channelId: "",
       categoryId: "",
@@ -83,23 +82,21 @@
   function apiBase() {
     return String(window.OPS_API_BASE || CFG.API_BASE || "").replace(/\/$/, "");
   }
-  function isLive() {
-    return Boolean(apiBase()) && !store.mockMode;
-  }
-  function route(key, id) {
+  function rpath(key, id) {
     let p = (CFG.routes && CFG.routes[key]) || "";
     if (id) p = p.replace(":guildId", id);
     return p;
   }
-  async function api(pathname, opts = {}) {
-    if (!isLive()) throw new Error("MOCK");
-    const res = await fetch(apiBase() + pathname, {
+  async function api(path, opts = {}) {
+    const base = apiBase();
+    if (!base) throw new Error("NO_API");
+    const res = await fetch(base + path, {
       credentials: "include",
       headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
       ...opts,
     });
     if (res.status === 403) {
-      showForbidden();
+      location.hash = "#/forbidden";
       throw new Error("403");
     }
     if (!res.ok) throw new Error("API " + res.status);
@@ -110,10 +107,10 @@
   function loadStore() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      const base = { mockMode: !(window.OPS_API_BASE || CFG.API_BASE) && CFG.MOCK_DEFAULT !== false, guilds: {}, lastGuildId: null };
+      const base = { guilds: {}, lastGuildId: null };
       return raw ? Object.assign(base, JSON.parse(raw)) : base;
     } catch {
-      return { mockMode: !apiBase(), guilds: {}, lastGuildId: null };
+      return { guilds: {}, lastGuildId: null };
     }
   }
   function saveStore() {
@@ -146,225 +143,243 @@
     s.audit.unshift({ type, text, at: new Date().toISOString() });
     s.audit = s.audit.slice(0, 50);
     saveStore();
-    renderAudit();
+    renderLogs();
     renderFeed();
   }
 
-  function showMarketing() {
-    $("marketing").hidden = false;
-    $("dashboard").hidden = true;
-    closeAuth();
+  /* ===== Hash router — one full screen ===== */
+  function parseHash() {
+    const raw = (location.hash || "#/").replace(/^#/, "") || "/";
+    const parts = raw.split("/").filter(Boolean);
+    if (parts[0] === "login") return { screen: "login" };
+    if (parts[0] === "servers") return { screen: "servers" };
+    if (parts[0] === "forbidden") return { screen: "forbidden" };
+    if (parts[0] === "g" && parts[1]) {
+      const mod = parts[2] && MOD_TITLES[parts[2]] ? parts[2] : "overview";
+      return { screen: "guild", guildId: parts[1], mod };
+    }
+    return { screen: "landing" };
   }
-  function showDashboard() {
-    $("marketing").hidden = true;
-    $("dashboard").hidden = false;
+
+  function go(hash) {
+    if (!hash.startsWith("#")) hash = "#" + hash;
+    if (location.hash === hash) applyRoute();
+    else location.hash = hash;
   }
-  function openAuth() {
-    $("auth-modal").hidden = false;
-  }
-  function closeAuth() {
-    $("auth-modal").hidden = true;
-  }
-  function showServers() {
-    $("screen-servers").hidden = false;
-    $("screen-guild").hidden = true;
-    if ($("screen-forbidden")) $("screen-forbidden").hidden = true;
-    $("guild-chip").hidden = true;
+
+  function showScreen(name) {
+    ["landing", "login", "servers", "guild", "forbidden"].forEach((n) => {
+      const el = $("screen-" + n);
+      if (!el) return;
+      const on = n === name;
+      el.hidden = !on;
+      el.classList.toggle("is-active", on);
+    });
+    window.scrollTo(0, 0);
     closeSide();
-    renderServers();
-  }
-  function showForbidden() {
-    $("screen-servers").hidden = true;
-    $("screen-guild").hidden = true;
-    if ($("screen-forbidden")) $("screen-forbidden").hidden = false;
-    toast("403 — الأونر فقط يقدر يعدّل إعدادات السيرفر");
-  }
-  function closeSide() {
-    $("dash-side")?.classList.remove("is-open");
-  }
-  function openSide() {
-    $("dash-side")?.classList.add("is-open");
   }
 
-  function updateModeChip() {
-    if ($("mode-chip")) $("mode-chip").textContent = isLive() ? "متصل بالـ API" : "تجريبي";
-    if ($("toggle-mock")) $("toggle-mock").checked = store.mockMode;
-  }
+  function applyRoute() {
+    const r = parseHash();
 
-  function enterSession({ user, guilds, mock }) {
-    session = { user, guilds, mock };
-    if (mock) sessionStorage.setItem("ops-mock", "1");
-    showDashboard();
-    closeAuth();
-    if ($("user-label")) $("user-label").textContent = user.global_name || user.username || "مستخدم";
-    if ($("user-avatar")) $("user-avatar").textContent = (user.global_name || user.username || "?").slice(0, 1);
-    updateModeChip();
-    showServers();
-    toast(mock ? "دخول تجريبي (محاكاة Discord)" : "تم تسجيل الدخول");
-  }
-
-  function loginDiscord() {
-    const base = apiBase();
-    if (base) {
-      window.location.href = base + (route("login") || "/auth/discord");
+    if (r.screen === "landing") {
+      showScreen("landing");
       return;
     }
-    toast("عيّن OPS_API_BASE أو استخدم الدخول التجريبي");
-    $("auth-modal")?.querySelector(".mock-box")?.classList.add("pulse");
-  }
-
-  function inviteBot(gid) {
-    const base = apiBase();
-    if (base) {
-      window.location.href = base + (route("invite") || "/invite");
+    if (r.screen === "login") {
+      if (session) return go("#/servers");
+      showScreen("login");
       return;
     }
-    if (gid && session) {
-      const g = session.guilds.find((x) => x.id === gid);
-      if (g) {
-        g.botPresent = true;
-        renderServers();
-        toast("محاكاة دعوة البوت");
-        return;
+    if (r.screen === "forbidden") {
+      showScreen("forbidden");
+      return;
+    }
+    if (r.screen === "servers") {
+      if (!session) return go("#/login");
+      showScreen("servers");
+      renderServers();
+      return;
+    }
+    if (r.screen === "guild") {
+      if (!session) return go("#/login");
+      const g = session.guilds.find((x) => x.id === r.guildId);
+      if (!g) return go("#/servers");
+      if (!g.owner) return go("#/forbidden");
+      if (!g.botPresent) {
+        toast("أضف البوت لهذا السيرفر أولاً");
+        return go("#/servers");
       }
-    }
-    const url =
-      typeof CFG.inviteUrl === "function"
-        ? CFG.inviteUrl(CFG.DISCORD_CLIENT_ID)
-        : "https://discord.com/api/oauth2/authorize?client_id=CLIENT_ID&permissions=2147609616&scope=bot%20applications.commands";
-    window.open(url, "_blank", "noopener");
-  }
-
-  async function logout() {
-    if (isLive()) {
-      try {
-        await api(route("logout"), { method: "POST" });
-      } catch (_) {}
-    }
-    sessionStorage.removeItem("ops-mock");
-    session = null;
-    guildId = null;
-    showMarketing();
-  }
-
-  async function restoreSession() {
-    if (isLive()) {
-      try {
-        const me = await api(route("me"));
-        const g = await api(route("guilds"));
-        enterSession({ user: me, guilds: g.guilds || g, mock: false });
-        return;
-      } catch (_) {}
-    }
-    if (sessionStorage.getItem("ops-mock") === "1") {
-      enterSession({
-        user: MOCK_USER,
-        guilds: MOCK_GUILDS.map((g) => ({ ...g })),
-        mock: true,
-      });
+      guildId = r.guildId;
+      store.lastGuildId = guildId;
+      saveStore();
+      showScreen("guild");
+      paintGuild(g);
+      showMod(r.mod || "overview");
     }
   }
 
-  function renderServers() {
-    const grid = $("server-grid");
-    if (!grid || !session) return;
-    const list = session.guilds || [];
-    grid.innerHTML =
-      list
-        .map((g) => {
-          let badge;
-          let action;
-          if (!g.owner) {
-            badge = '<span class="badge warn">لست الأونر</span>';
-            action = `<button type="button" class="btn btn-ghost btn-sm" data-deny="${g.id}">لا صلاحية</button>`;
-          } else if (!g.botPresent) {
-            badge = '<span class="badge warn">البوت غير موجود</span>';
-            action = `<button type="button" class="btn btn-discord btn-sm" data-invite="${g.id}">إضافة البوت</button>`;
-          } else {
-            badge = '<span class="badge ok">الأونر · البوت جاهز</span>';
-            action = `<button type="button" class="btn btn-gradient btn-sm" data-open="${g.id}">فتح الإعدادات</button>`;
-          }
-          return `<article class="server-tile glass-card ${g.owner && g.botPresent ? "" : "dim"}">
-          <div class="server-icon">${esc((g.name || "?").slice(0, 1))}</div>
-          <strong>${esc(g.name)}</strong>${badge}${action}</article>`;
-        })
-        .join("") ||
-      '<p class="empty-hint">لا سيرفرات. ادعُ البوت لسيرفر تملكه (Owner).</p>';
-
-    grid.querySelectorAll("[data-open]").forEach((b) => {
-      b.onclick = () => openGuild(b.dataset.open);
-    });
-    grid.querySelectorAll("[data-invite]").forEach((b) => {
-      b.onclick = () => inviteBot(b.dataset.invite);
-    });
-    grid.querySelectorAll("[data-deny]").forEach((b) => {
-      b.onclick = () => showForbidden();
-    });
-  }
-
-  async function openGuild(id) {
-    const g = session?.guilds.find((x) => x.id === id);
-    if (!g) return;
-    if (!g.owner) return showForbidden();
-    if (!g.botPresent) return toast("ادعُ البوت أولاً");
-
-    guildId = id;
-    store.lastGuildId = id;
-    saveStore();
-
-    if (isLive()) {
-      try {
-        const remote = await api(route("settings", id));
-        if (remote) store.guilds[id] = Object.assign(defaultSettings(), remote);
-        saveStore();
-      } catch (e) {
-        if (e.message === "403") return;
-      }
-    }
-
-    $("screen-servers").hidden = true;
-    if ($("screen-forbidden")) $("screen-forbidden").hidden = true;
-    $("screen-guild").hidden = false;
-    $("guild-chip").hidden = false;
-    $("guild-chip").textContent = g.name;
+  function paintGuild(g) {
     $("side-guild-name").textContent = g.name;
     $("side-guild-icon").textContent = (g.name || "S").slice(0, 1);
-    if ($("ov-perm")) $("ov-perm").textContent = "مالك السيرفر (Owner)";
+    $("guild-chip").textContent = g.name;
+    $$(".side-link[data-mod]").forEach((a) => {
+      a.href = `#/g/${g.id}/${a.dataset.mod}`;
+    });
     fillForms();
-    showMod("overview");
     renderTickets();
-    renderAudit();
+    renderLogs();
     renderFeed();
     tickStats();
   }
 
   function showMod(name) {
-    ["overview", "tickets", "panel", "roles", "smart", "audit"].forEach((m) => {
+    Object.keys(MOD_TITLES).forEach((m) => {
       const el = $("mod-" + m);
       if (el) el.hidden = m !== name;
     });
-    $$("[data-mod]").forEach((b) => b.classList.toggle("is-active", b.dataset.mod === name));
-    if ($("mod-title")) $("mod-title").textContent = MOD_TITLE[name] || name;
-    closeSide();
+    $$(".side-link[data-mod]").forEach((a) => {
+      a.classList.toggle("is-active", a.dataset.mod === name);
+    });
+    $("mod-title").textContent = MOD_TITLES[name] || name;
   }
 
+  function openSide() {
+    $("sidebar")?.classList.add("is-open");
+    if ($("sidebar-backdrop")) $("sidebar-backdrop").hidden = false;
+  }
+  function closeSide() {
+    $("sidebar")?.classList.remove("is-open");
+    if ($("sidebar-backdrop")) $("sidebar-backdrop").hidden = true;
+  }
+
+  /* ===== Auth ===== */
+  function setUserChrome(user, mock) {
+    $("user-label").textContent = user.global_name || user.username || "مستخدم";
+    $("user-avatar").textContent = (user.global_name || user.username || "?").slice(0, 1);
+    $("mode-chip").textContent = mock ? "تجريبي" : "متصل · Railway";
+  }
+
+  function enterSession({ user, guilds, mock }) {
+    session = { user, guilds, mock };
+    if (mock) sessionStorage.setItem("ops-mock", "1");
+    setUserChrome(user, mock);
+    go("#/servers");
+    toast(mock ? "دخول تجريبي" : "تم تسجيل الدخول");
+  }
+
+  function loginDiscord() {
+    const base = apiBase();
+    if (!base) {
+      toast("OPS_API_BASE غير مضبوط");
+      return;
+    }
+    window.location.href = base + (rpath("login") || "/auth/discord");
+  }
+
+  function inviteBot() {
+    const base = apiBase();
+    if (base) {
+      window.location.href = base + (rpath("invite") || "/invite");
+      return;
+    }
+    window.open(CFG.inviteUrl?.(CFG.DISCORD_CLIENT_ID) || "#", "_blank", "noopener");
+  }
+
+  async function logout() {
+    if (apiBase()) {
+      try {
+        await api(rpath("logout"), { method: "POST" });
+      } catch (_) {}
+    }
+    sessionStorage.removeItem("ops-mock");
+    session = null;
+    guildId = null;
+    go("#/");
+  }
+
+  async function restoreSession() {
+    if (apiBase()) {
+      try {
+        const me = await api(rpath("me"));
+        const g = await api(rpath("guilds"));
+        session = { user: me, guilds: g.guilds || g, mock: false };
+        setUserChrome(me, false);
+        applyRoute();
+        return;
+      } catch (_) {}
+    }
+    if (sessionStorage.getItem("ops-mock") === "1") {
+      session = {
+        user: MOCK_USER,
+        guilds: MOCK_GUILDS.map((g) => ({ ...g })),
+        mock: true,
+      };
+      setUserChrome(MOCK_USER, true);
+    }
+    applyRoute();
+  }
+
+  /* ===== Servers ===== */
+  function renderServers() {
+    const grid = $("server-grid");
+    if (!grid || !session) return;
+    grid.innerHTML =
+      session.guilds
+        .map((g) => {
+          let badge, action;
+          if (!g.owner) {
+            badge = '<span class="badge warn">لست الأونر</span>';
+            action = `<button type="button" class="btn btn-ghost btn-sm" data-deny>لا صلاحية</button>`;
+          } else if (!g.botPresent) {
+            badge = '<span class="badge warn">بدون بوت</span>';
+            action = `<button type="button" class="btn btn-discord btn-sm" data-inv="${g.id}">إضافة البوت</button>`;
+          } else {
+            badge = '<span class="badge ok">جاهز</span>';
+            action = `<a class="btn btn-grad btn-sm" href="#/g/${g.id}/overview">فتح التحكم</a>`;
+          }
+          return `<article class="server-tile ${g.owner && g.botPresent ? "" : "dim"}">
+            <div class="server-icon">${esc((g.name || "?").slice(0, 1))}</div>
+            <strong>${esc(g.name)}</strong>${badge}${action}</article>`;
+        })
+        .join("") || '<p class="empty">لا سيرفرات.</p>';
+
+    grid.querySelectorAll("[data-deny]").forEach((b) => {
+      b.onclick = () => go("#/forbidden");
+    });
+    grid.querySelectorAll("[data-inv]").forEach((b) => {
+      b.onclick = () => {
+        if (!apiBase()) {
+          const g = session.guilds.find((x) => x.id === b.dataset.inv);
+          if (g) {
+            g.botPresent = true;
+            renderServers();
+            toast("محاكاة إضافة البوت");
+            return;
+          }
+        }
+        inviteBot();
+      };
+    });
+  }
+
+  /* ===== Persist ===== */
   async function persist(section) {
     const g = session?.guilds.find((x) => x.id === guildId);
     if (!g?.owner) {
-      showForbidden();
+      go("#/forbidden");
       return false;
     }
     saveStore();
-    if (isLive()) {
+    if (apiBase()) {
       try {
-        await api(route("settings", guildId), {
+        await api(rpath("settings", guildId), {
           method: "PUT",
           body: JSON.stringify({ section, settings: settings() }),
         });
       } catch (e) {
         if (e.message === "403") return false;
-        toast("تعذّر الحفظ على الخادم — بقي محلياً");
-        return false;
+        toast("حُفظ محلياً — تعذّر المزامنة");
       }
     }
     return true;
@@ -412,9 +427,9 @@
     renderPerms();
   }
 
-  function updateGrad(color) {
+  function updateGrad(c) {
     const el = $("grad-preview");
-    if (el) el.style.background = `linear-gradient(135deg,#5B4DFF,${color},#A855F7)`;
+    if (el) el.style.background = `linear-gradient(135deg,#5B4DFF,${c},#A855F7)`;
   }
 
   function renderCats() {
@@ -424,11 +439,11 @@
     list.innerHTML = cats
       .map(
         (c, i) => `<li class="cat-row">
-      <input type="color" value="${c.color}" data-i="${i}" data-f="color"/>
-      <input type="text" value="${esc(c.name)}" data-i="${i}" data-f="name"/>
-      <input type="text" class="en" dir="ltr" value="${esc(c.key)}" data-i="${i}" data-f="key"/>
-      <button type="button" class="btn btn-ghost btn-sm" data-del="${i}">حذف</button>
-    </li>`
+        <input type="color" value="${c.color}" data-i="${i}" data-f="color" />
+        <input type="text" value="${esc(c.name)}" data-i="${i}" data-f="name" />
+        <input type="text" class="en" dir="ltr" value="${esc(c.key)}" data-i="${i}" data-f="key" />
+        <button type="button" class="btn btn-ghost btn-sm" data-del="${i}">حذف</button>
+      </li>`
       )
       .join("");
     list.querySelectorAll("input").forEach((inp) => {
@@ -466,7 +481,9 @@
       const row = s.perms[it.id] || {};
       return `<tr><td>${it.label}</td>${PERM_ROLES.map(
         (r) =>
-          `<td><input type="checkbox" data-perm="${it.id}" data-role="${r}" ${row[r] ? "checked" : ""}/></td>`
+          `<td><input type="checkbox" data-perm="${it.id}" data-role="${r}" ${
+            row[r] ? "checked" : ""
+          } /></td>`
       ).join("")}</tr>`;
     }).join("");
   }
@@ -478,43 +495,42 @@
       if (!q) return true;
       return t.id.toLowerCase().includes(q) || t.cat.includes(q);
     });
-    if ($("tickets-body")) {
-      $("tickets-body").innerHTML = rows
-        .map(
-          (t) => `<tr>
+    const body = $("tickets-body");
+    if (!body) return;
+    body.innerHTML = rows
+      .map(
+        (t) => `<tr>
         <td class="en" dir="ltr">${t.id}</td><td>${t.cat}</td>
         <td><span class="prio ${t.prio}">${PRIO_AR[t.prio]}</span></td>
         <td><span class="status-chip ${t.status}">${STATUS_AR[t.status]}</span></td>
-        <td>${t.who}</td><td>${t.ago}</td></tr>`
-        )
-        .join("");
-    }
-    if ($("tickets-cards")) {
-      $("tickets-cards").innerHTML = rows
-        .map(
-          (t) => `<article class="ticket-card glass-card">
-        <div><strong class="en" dir="ltr">${t.id}</strong>
-        <span class="status-chip ${t.status}">${STATUS_AR[t.status]}</span></div>
-        <div>${t.cat} · <span class="prio ${t.prio}">${PRIO_AR[t.prio]}</span></div>
-        <div class="muted">${t.who} · ${t.ago}</div></article>`
-        )
-        .join("");
-    }
+        <td>${t.who}</td><td>${t.ago}</td>
+        <td><button type="button" class="btn btn-ghost btn-sm" data-claim="${t.id}">استلام</button></td>
+      </tr>`
+      )
+      .join("");
+    body.querySelectorAll("[data-claim]").forEach((b) => {
+      b.onclick = () => {
+        addAudit("ticket", "استلام " + b.dataset.claim);
+        toast("تم الاستلام (تجريبي)");
+      };
+    });
   }
 
-  function renderAudit() {
+  function renderLogs() {
     const el = $("audit-list");
     if (!el) return;
     const items = settings().audit.length
       ? settings().audit
       : [
-          { type: "power", text: "البوت جاهز على السيرفر", at: new Date(Date.now() - 36e5).toISOString() },
-          { type: "settings", text: "تحميل إعدادات افتراضية", at: new Date(Date.now() - 35e5).toISOString() },
+          { type: "power", text: "البوت جاهز", at: new Date(Date.now() - 36e5).toISOString() },
+          { type: "settings", text: "تحميل إعدادات", at: new Date(Date.now() - 35e5).toISOString() },
         ];
     el.innerHTML = items
       .map(
         (a) =>
-          `<li><span class="audit-badge">${a.type}</span><span>${esc(a.text)}</span><time>${fmt(a.at)}</time></li>`
+          `<li><span class="audit-badge">${a.type}</span><span>${esc(a.text)}</span><time>${fmt(
+            a.at
+          )}</time></li>`
       )
       .join("");
   }
@@ -523,13 +539,13 @@
     if (!el) return;
     const items = (settings().audit.length
       ? settings().audit
-      : [
-          { text: "TKT-0013 — مبيعات", at: new Date(Date.now() - 48e4).toISOString() },
-          { text: "استلام TKT-0012", at: new Date(Date.now() - 72e4).toISOString() },
-        ]
+      : [{ text: "TKT-0013 مبيعات", at: new Date().toISOString() }]
     ).slice(0, 5);
     el.innerHTML = items
-      .map((a) => `<li><span class="dot"></span><span>${esc(a.text)}</span><time>${rel(a.at)}</time></li>`)
+      .map(
+        (a) =>
+          `<li><span class="dot"></span><span>${esc(a.text)}</span><time>${rel(a.at)}</time></li>`
+      )
       .join("");
   }
   function tickStats() {
@@ -558,51 +574,38 @@
     }
   }
 
+  /* ===== Bind ===== */
   function bind() {
-    ["btn-nav-invite", "btn-hero-invite", "btn-cta-invite", "btn-invite-global"].forEach((id) => {
-      $(id)?.addEventListener("click", () => inviteBot());
-    });
-    ["btn-nav-dash", "btn-hero-dash", "btn-cta-dash"].forEach((id) => {
-      $(id)?.addEventListener("click", () => (session ? showServers() : openAuth()));
-    });
-    $("brand-home")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      session ? showServers() : showMarketing();
-    });
-    $("mkt-burger")?.addEventListener("click", () => {
-      document.querySelector(".mkt-nav, .mkt-links")?.classList.toggle("is-open");
-    });
-    $$("[data-close-auth]").forEach((el) => el.addEventListener("click", closeAuth));
+    window.addEventListener("hashchange", applyRoute);
+
+    $$("[data-invite]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        inviteBot();
+      })
+    );
+
     $("btn-discord-login")?.addEventListener("click", loginDiscord);
     $("btn-mock-login")?.addEventListener("click", () => {
-      store.mockMode = true;
-      saveStore();
-      enterSession({ user: MOCK_USER, guilds: MOCK_GUILDS.map((g) => ({ ...g })), mock: true });
+      enterSession({
+        user: MOCK_USER,
+        guilds: MOCK_GUILDS.map((g) => ({ ...g })),
+        mock: true,
+      });
     });
-    $("toggle-mock")?.addEventListener("change", (e) => {
-      store.mockMode = e.target.checked;
-      saveStore();
-      updateModeChip();
-    });
-
-    $("user-btn")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const dd = $("user-dropdown");
-      if (dd) dd.hidden = !dd.hidden;
-    });
-    document.addEventListener("click", () => {
-      if ($("user-dropdown")) $("user-dropdown").hidden = true;
-    });
-    $("btn-goto-servers")?.addEventListener("click", showServers);
     $("btn-logout")?.addEventListener("click", logout);
-    $("btn-servers-home")?.addEventListener("click", showServers);
-    $("btn-change-server")?.addEventListener("click", showServers);
-    $("btn-forbidden-back")?.addEventListener("click", showServers);
+    $("btn-logout-side")?.addEventListener("click", logout);
+    $("btn-invite-global")?.addEventListener("click", inviteBot);
+    $("btn-side-open")?.addEventListener("click", openSide);
+    $("sidebar-backdrop")?.addEventListener("click", closeSide);
 
-    $$("[data-mod]").forEach((b) => b.addEventListener("click", () => showMod(b.dataset.mod)));
-    $$("[data-goto]").forEach((b) => b.addEventListener("click", () => showMod(b.dataset.goto)));
-    $("btn-open-side")?.addEventListener("click", openSide);
-    $("side-toggle-mobile")?.addEventListener("click", closeSide);
+    $$(".btn[data-mod]").forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (!guildId) return;
+        go(`#/g/${guildId}/${a.dataset.mod}`);
+      });
+    });
 
     $("cfg-color")?.addEventListener("input", (e) => {
       setVal("cfg-hex", e.target.value);
@@ -627,13 +630,24 @@
       p.channelId = $("cfg-channel").value.trim();
       p.categoryId = $("cfg-category").value.trim();
       if (!(await persist("panel"))) return;
-      if (isLive()) {
-        try {
-          await api(route("panel", guildId), { method: "POST", body: JSON.stringify(p) });
-        } catch (_) {}
-      }
-      addAudit("settings", "تحديث المنبر");
+      addAudit("settings", "حفظ المنبر");
       toast("حُفظ المنبر");
+    });
+
+    $("btn-publish-panel")?.addEventListener("click", async () => {
+      if (!(await persist("panel"))) return;
+      if (apiBase()) {
+        try {
+          await api(rpath("panel", guildId), {
+            method: "POST",
+            body: JSON.stringify(settings().panel),
+          });
+          toast("نُشر المنبر للقناة");
+        } catch {
+          toast("تعذّر النشر — تحقق من الـ API و Redirect URI");
+        }
+      } else toast("نُشر المنبر (تجريبي)");
+      addAudit("panel", "نشر المنبر");
     });
 
     $("btn-add-cat")?.addEventListener("click", () => {
@@ -650,8 +664,8 @@
         admin: $("role-admin").value.trim(),
       };
       if (!(await persist("roles"))) return;
-      addAudit("settings", "تحديث الرتب");
-      toast("حُفظت الرتب (الأونر فقط)");
+      addAudit("settings", "حفظ الرتب");
+      toast("حُفظت الرتب");
     });
 
     $("btn-save-perms")?.addEventListener("click", async () => {
@@ -662,7 +676,7 @@
         s.perms[cb.dataset.perm][cb.dataset.role] = cb.checked;
       });
       if (!(await persist("perms"))) return;
-      addAudit("settings", "تحديث الصلاحيات");
+      addAudit("settings", "حفظ الصلاحيات");
       toast("حُفظت الصلاحيات");
     });
 
@@ -682,23 +696,22 @@
       };
       if (!(await persist("smart"))) return;
       if ($("ov-smart")) $("ov-smart").textContent = settings().smart.auto ? "مفعّل" : "متوقف";
-      addAudit("settings", "تحديث الإعدادات الذكية");
+      addAudit("settings", "حفظ الذكي");
       toast("حُفظت الإعدادات الذكية");
     });
 
-    const filters = $("ticket-filters");
-    if (filters) {
-      filters.querySelectorAll("[data-f], .chip").forEach((chip) => {
-        chip.addEventListener("click", () => {
-          filters.querySelectorAll(".chip, [data-f]").forEach((c) => c.classList.remove("is-active"));
-          chip.classList.add("is-active");
-          ticketFilter = chip.dataset.f || "all";
-          renderTickets();
-        });
+    $("ticket-filters")?.querySelectorAll(".chip-btn, button[data-f]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        $("ticket-filters")
+          .querySelectorAll(".chip-btn, button[data-f]")
+          .forEach((b) => b.classList.remove("is-on", "is-active"));
+        btn.classList.add("is-on");
+        ticketFilter = btn.dataset.f || "all";
+        renderTickets();
       });
-    }
+    });
     $("ticket-q")?.addEventListener("input", renderTickets);
-    $("btn-refresh-audit")?.addEventListener("click", () => {
+    $("btn-refresh-logs")?.addEventListener("click", () => {
       addAudit("settings", "تحديث السجل");
       toast("تم التحديث");
     });
@@ -714,11 +727,6 @@
     });
   }
 
-  if (apiBase()) store.mockMode = false; // live API tunnel configured
   bind();
-  updateModeChip();
   restoreSession();
-  setInterval(() => {
-    if (guildId && $("screen-guild") && !$("screen-guild").hidden) tickStats();
-  }, 12000);
 })();

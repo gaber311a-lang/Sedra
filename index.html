@@ -4,337 +4,297 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0B0B14" />
-  <meta name="description" content="Ops — بوت تذاكر ديسكورد ذكي متعدد السيرفرات. أضفه لسيرفرك وأدره من الويب." />
-  <meta property="og:title" content="Ops — بوت التذاكر الذكي" />
-  <meta property="og:description" content="تذاكر ذكية، متعدد السيرفرات، إدارة من الويب — بنفسجي متدرج." />
+  <meta name="description" content="Ops — لوحة تحكم بوت تذاكر ديسكورد. سيرفرات، تذاكر، رتب، منبر." />
+  <meta property="og:title" content="Ops — تحكم كامل ببوت التذاكر" />
   <meta property="og:url" content="https://gaber311a-lang.github.io/ops/" />
-  <title>Ops — بوت التذاكر الذكي لديسكورد</title>
+  <title>Ops — لوحة تحكم بوت التذاكر</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
-  <a class="skip" href="#main">تخطي</a>
+  <a class="skip" href="#app">تخطي</a>
+  <div id="app" class="app">
 
-  <!-- ========== MARKETING ========== -->
-  <div id="marketing" class="marketing">
-    <header class="mkt-nav">
-      <a class="brand" href="#top" id="brand-home">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span class="brand-name">Ops</span>
-      </a>
-      <nav class="mkt-links" aria-label="التنقل">
-        <a href="#features">المميزات</a>
-        <a href="#how">كيف يعمل</a>
-        <a href="#security">الأمان</a>
-      </nav>
-      <div class="mkt-actions">
-        <button type="button" class="btn btn-ghost btn-sm" id="btn-nav-dash">لوحة التحكم</button>
-        <button type="button" class="btn btn-gradient" id="btn-nav-invite">أضف إلى ديسكورد</button>
-      </div>
-      <button type="button" class="mkt-burger" id="mkt-burger" aria-label="القائمة"><span></span><span></span></button>
-    </header>
+    <!-- ========== SCREEN: LANDING (marketing only) ========== -->
+    <section id="screen-landing" class="screen screen-landing is-active" data-screen="landing">
+      <header class="topnav">
+        <a class="brand" href="#/"><span class="brand-mark"></span><span class="brand-name">Ops</span></a>
+        <nav class="topnav-links">
+          <a href="#features">المميزات</a>
+          <a href="#how">كيف يعمل</a>
+        </nav>
+        <div class="topnav-actions">
+          <a class="btn btn-ghost btn-sm" href="#/login">تسجيل الدخول</a>
+          <a class="btn btn-grad btn-sm" href="#/login" data-invite>أضف إلى ديسكورد</a>
+        </div>
+      </header>
 
-    <main id="main">
-      <section class="hero" id="top">
-        <div class="hero-glow" aria-hidden="true"></div>
-        <div class="hero-inner">
-          <p class="eyebrow"><span class="pill-grad">متعدد السيرفرات</span> بوت تذاكر ذكي لديسكورد</p>
-          <h1>Ops — تحكّم كامل<br /><span class="grad-text">بتذاكر سيرفرك</span></h1>
-          <p class="hero-lead">أضف البوت لأي سيرفر، سجّل دخولك بـ Discord، وأدر الرتب والمنبر والسلوك الذكي من لوحة ويب بنفسجية فاخرة — بأسلوب منتجات مثل ProBot.</p>
+      <div class="landing-body">
+        <div class="hero">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <p class="pill">متعدد السيرفرات · الأونر فقط</p>
+          <h1>Ops — <span class="grad-text">تحكم حقيقي</span><br />بتذاكر سيرفرك</h1>
+          <p class="lead">لوحة ويب منفصلة: سيرفرات، تذاكر، منبر، رتب، وإعدادات ذكية — كل وحدة شاشة كاملة، مو صفحة وحدة طويلة.</p>
           <div class="hero-ctas">
-            <button type="button" class="btn btn-gradient btn-lg" id="btn-hero-invite">أضف إلى ديسكورد</button>
-            <button type="button" class="btn btn-glass btn-lg" id="btn-hero-dash">لوحة التحكم</button>
-          </div>
-          <p class="hero-note">OAuth2 · بدون توكن في المتصفح · إعدادات لكل سيرفر</p>
-        </div>
-        <div class="hero-preview glass-card" aria-hidden="true">
-          <div class="preview-bar">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            <span class="preview-title">Ops Dashboard</span>
-          </div>
-          <div class="preview-body">
-            <div class="preview-side">
-              <span class="ph"></span><span class="ph"></span><span class="ph active"></span><span class="ph"></span>
-            </div>
-            <div class="preview-main">
-              <div class="preview-stat"></div>
-              <div class="preview-stat"></div>
-              <div class="preview-row"></div>
-              <div class="preview-row short"></div>
-            </div>
+            <a class="btn btn-grad btn-lg" href="#/login">افتح لوحة التحكم</a>
+            <a class="btn btn-glass btn-lg" href="#/login" data-invite>أضف البوت</a>
           </div>
         </div>
-      </section>
 
-      <section class="section" id="features">
-        <header class="section-head">
-          <p class="eyebrow">المميزات</p>
-          <h2>كل ما تحتاجه لإدارة التذاكر</h2>
-        </header>
-        <div class="feature-grid">
-          <article class="feature-card glass-card"><div class="f-ico">◈</div><h3>تذاكر ذكية</h3><p>رد تلقائي، اقتراح فئة، SLA، وإغلاق عند الخمول — لكل سيرفر.</p></article>
-          <article class="feature-card glass-card"><div class="f-ico">⬡</div><h3>متعدد السيرفرات</h3><p>مالك السيرفر (الأونر) فقط يضيف Ops ويدير إعدادات سيرفره من اللوحة.</p></article>
-          <article class="feature-card glass-card"><div class="f-ico">✦</div><h3>إدارة من الويب</h3><p>منبر، رتب، رسائل عربية، وصلاحيات — بدون لمس الكود.</p></article>
-          <article class="feature-card glass-card"><div class="f-ico">🔒</div><h3>أمان حقيقي</h3><p>جلسات httpOnly، لا توكن في الواجهة، والأونر فقط يقدر يعدّل إعدادات السيرفر.</p></article>
-          <article class="feature-card glass-card"><div class="f-ico">▣</div><h3>إحصائيات</h3><p>مفتوحة، مُستلمة، SLA، ومتوسط الانتظار — لكل سيرفر.</p></article>
-          <article class="feature-card glass-card"><div class="f-ico">♛</div><h3>رتب من Ops</h3><p>الرتب الإدارية تُضبط هنا فقط؛ البوت يقرأها من الـ API.</p></article>
-        </div>
-      </section>
-
-      <section class="section" id="how">
-        <header class="section-head">
-          <p class="eyebrow">كيف يعمل</p>
-          <h2>ثلاث خطوات فقط</h2>
-        </header>
-        <div class="steps">
-          <article class="step-card glass-card"><span class="step-num">1</span><h3>أضف البوت</h3><p>ادعُ Ops إلى سيرفرك بصلاحيات القنوات والأوامر.</p></article>
-          <article class="step-card glass-card"><span class="step-num">2</span><h3>سجّل الدخول</h3><p>Discord OAuth — ثم اختر السيرفر من شبكة الأيقونات.</p></article>
-          <article class="step-card glass-card"><span class="step-num">3</span><h3>اضبط الرتب والمنبر</h3><p>رتب إدارية، منبر التذاكر، وسلوك ذكي — احفظ لكل سيرفر.</p></article>
-        </div>
-      </section>
-
-      <section class="section cta-band" id="security">
-        <div class="cta-band-inner glass-card">
-          <h2>جاهز لرفع سيرفرك؟</h2>
-          <p>بنفسجي متدرج، عربي بالكامل، ولوحة بمستوى منتجات البوتات الكبرى.</p>
-          <div class="hero-ctas">
-            <button type="button" class="btn btn-gradient btn-lg" id="btn-cta-invite">أضف إلى ديسكورد</button>
-            <button type="button" class="btn btn-glass btn-lg" id="btn-cta-dash">افتح لوحة التحكم</button>
+        <section class="block" id="features">
+          <h2>لماذا Ops؟</h2>
+          <div class="feat-grid">
+            <article class="feat"><h3>شاشات منفصلة</h3><p>هبوط → دخول → سيرفرات → وحدة التحكم. كل وحدة مساحة كاملة.</p></article>
+            <article class="feat"><h3>تذاكر حية</h3><p>قائمة، فلاتر، استلام وإغلاق من اللوحة.</p></article>
+            <article class="feat"><h3>رتب من Ops</h3><p>الأونر يضبط Role IDs هنا؛ البوت يقرأ من الـ API.</p></article>
+            <article class="feat"><h3>منبر بنقرة</h3><p>عنوان، لون، تصنيفات، نشر المنبر للقناة.</p></article>
+            <article class="feat"><h3>سلوك ذكي</h3><p>رد تلقائي، تذكرة واحدة، خمول، SLA — مفاتيح حقيقية.</p></article>
+            <article class="feat"><h3>أمان</h3><p>OAuth + جلسة httpOnly · الأونر فقط يعدّل الإعدادات.</p></article>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
 
-    <footer class="mkt-footer">
-      <div class="footer-brand"><span class="brand-mark sm"></span><strong>Ops</strong></div>
-      <p>لوحة تحكم بوت التذاكر · <a class="en" href="https://github.com/gaber311a-lang/discord-ticket-bot" target="_blank" rel="noopener">Bot repo</a></p>
-      <p class="footer-copy">© Ops · غابر</p>
-    </footer>
-  </div>
-
-  <!-- ========== AUTH MODAL ========== -->
-  <div id="auth-modal" class="modal" hidden>
-    <div class="modal-backdrop" data-close-auth></div>
-    <div class="modal-card glass-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-      <button type="button" class="modal-x" data-close-auth aria-label="إغلاق">×</button>
-      <div class="brand-mark lg"></div>
-      <h2 id="auth-title">دخول Ops</h2>
-      <p class="auth-sub">سجّل بـ Discord لإدارة سيرفراتك</p>
-      <button type="button" class="btn btn-discord btn-block" id="btn-discord-login">
-        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.8 19.8 0 0 0-4.885-1.515.07.07 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.3 18.3 0 0 0-5.487 0 12.6 12.6 0 0 0-.617-1.25.08.08 0 0 0-.079-.037A19.7 19.7 0 0 0 3.677 4.37a.09.09 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.08.08 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.08.08 0 0 0 .084-.027 14 14 0 0 0 1.226-1.994.08.08 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.08.08 0 0 1-.008-.127c.126-.094.252-.192.373-.292a.07.07 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.07.07 0 0 1 .079.01c.12.098.247.198.373.292a.08.08 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.08.08 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.08.08 0 0 0 .084.028 19.8 19.8 0 0 0 6.002-3.03.08.08 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-        تسجيل الدخول بـ Discord
-      </button>
-      <p class="oauth-hint">scopes: <span class="en" dir="ltr">identify guilds</span> — التوكن على الخادم فقط</p>
-      <div class="mock-box">
-        <p><strong>وضع تجريبي:</strong> الـ API غير مربوط بعد.</p>
-        <button type="button" class="btn btn-ghost btn-block" id="btn-mock-login">دخول تجريبي (محاكاة)</button>
-        <label class="chk"><input type="checkbox" id="toggle-mock" checked /> الإبقاء على المحاكاة حتى يتوفر API_BASE</label>
+        <section class="block" id="how">
+          <h2>ثلاث خطوات</h2>
+          <ol class="steps">
+            <li><strong>أضف البوت</strong> لسيرفرك</li>
+            <li><strong>سجّل الدخول</strong> بـ Discord</li>
+            <li><strong>اختر السيرفر</strong> وادخل وحدات التحكم</li>
+          </ol>
+        </section>
       </div>
-    </div>
-  </div>
 
-  <!-- ========== DASHBOARD ========== -->
-  <div id="dashboard" class="dashboard" hidden>
-    <header class="dash-top">
-      <button type="button" class="brand brand-btn" id="btn-servers-home">
-        <span class="brand-mark"></span>
-        <span class="brand-name">Ops</span>
-      </button>
-      <div class="dash-top-mid">
-        <span class="mode-chip" id="mode-chip">تجريبي</span>
-        <span class="guild-chip" id="guild-chip" hidden>—</span>
-      </div>
-      <div class="user-menu">
-        <button type="button" class="user-btn" id="user-btn" aria-haspopup="true" aria-expanded="false">
-          <span class="avatar" id="user-avatar">?</span>
-          <span class="user-label" id="user-label">—</span>
+      <footer class="landing-foot">
+        <span>Ops</span>
+        <a href="https://github.com/gaber311a-lang/discord-ticket-bot" target="_blank" rel="noopener">Bot repo</a>
+      </footer>
+    </section>
+
+    <!-- ========== SCREEN: LOGIN ========== -->
+    <section id="screen-login" class="screen screen-login" data-screen="login" hidden>
+      <div class="login-card glass">
+        <a class="brand center" href="#/"><span class="brand-mark"></span><span class="brand-name">Ops</span></a>
+        <h1>تسجيل الدخول</h1>
+        <p class="muted">ادخل بـ Discord لإدارة السيرفرات التي تملكها.</p>
+        <button type="button" class="btn btn-discord btn-block" id="btn-discord-login">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.37a19.8 19.8 0 0 0-4.885-1.515.07.07 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.3 18.3 0 0 0-5.487 0 12.6 12.6 0 0 0-.617-1.25.08.08 0 0 0-.079-.037A19.7 19.7 0 0 0 3.677 4.37a.09.09 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.08.08 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.08.08 0 0 0 .084-.027 14 14 0 0 0 1.226-1.994.08.08 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.08.08 0 0 1-.008-.127c.126-.094.252-.192.373-.292a.07.07 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.07.07 0 0 1 .079.01c.12.098.247.198.373.292a.08.08 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.08.08 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.08.08 0 0 0 .084.028 19.8 19.8 0 0 0 6.002-3.03.08.08 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+          تسجيل الدخول بـ Discord
         </button>
-        <div class="user-dropdown" id="user-dropdown" hidden>
-          <button type="button" id="btn-goto-servers">سيرفراتي</button>
-          <button type="button" id="btn-logout">خروج</button>
+        <p class="hint">scopes: identify · guilds — التوكن على الخادم فقط</p>
+        <div class="mock-box">
+          <p><strong>تجريبي:</strong> إن فشل الـ API يمكنك المعاينة محلياً.</p>
+          <button type="button" class="btn btn-ghost btn-block" id="btn-mock-login">دخول تجريبي</button>
         </div>
-      </div>
-    </header>
-
-    <!-- Server picker (ProBot style) -->
-    <section id="screen-servers" class="screen screen-servers">
-      <div class="screen-head">
-        <div>
-          <h1>اختر سيرفراً</h1>
-          <p>سيرفراتك التي تملكها (Owner) وفيها البوت. الأونر فقط يقدر يعدّل الإعدادات.</p>
-        </div>
-        <button type="button" class="btn btn-gradient" id="btn-invite-global">إضافة البوت لسيرفر</button>
-      </div>
-      <p class="owner-lock-note" role="note">الأونر فقط يقدر يعدّل إعدادات السيرفر — Admin/Manage Guild غير كافية.</p>
-      <div class="server-grid" id="server-grid"></div>
-    </section>
-
-    
-    <section id="screen-forbidden" class="screen screen-forbidden" hidden>
-      <div class="forbidden-card glass-card">
-        <div class="forbidden-code">403</div>
-        <h1>لا صلاحية</h1>
-        <p>الأونر فقط يقدر يعدّل إعدادات السيرفر في Ops. صلاحية Admin أو Manage Guild غير كافية.</p>
-        <button type="button" class="btn btn-gradient" id="btn-forbidden-back">العودة للسيرفرات</button>
+        <a class="back-link" href="#/">← العودة للرئيسية</a>
       </div>
     </section>
 
-    <!-- Inside a server -->
-    <div id="screen-guild" class="screen screen-guild" hidden>
-      <aside class="dash-side" id="dash-side">
-        <div class="side-guild" id="side-guild-info">
+    <!-- ========== SCREEN: SERVERS ========== -->
+    <section id="screen-servers" class="screen screen-servers" data-screen="servers" hidden>
+      <header class="appbar">
+        <a class="brand" href="#/servers"><span class="brand-mark"></span><span class="brand-name">Ops</span></a>
+        <span class="chip" id="mode-chip">—</span>
+        <div class="appbar-user">
+          <span class="avatar" id="user-avatar">?</span>
+          <span id="user-label">—</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">خروج</button>
+        </div>
+      </header>
+      <div class="servers-wrap">
+        <div class="servers-head">
+          <div>
+            <h1>سيرفراتك</h1>
+            <p class="muted">الأونر فقط · السيرفرات التي تملكها وفيها البوت</p>
+          </div>
+          <button type="button" class="btn btn-grad" id="btn-invite-global" data-invite>إضافة البوت لسيرفر</button>
+        </div>
+        <p class="owner-banner">الأونر فقط يقدر يعدّل إعدادات السيرفر — Admin غير كافية.</p>
+        <div class="server-grid" id="server-grid"></div>
+      </div>
+    </section>
+
+    <!-- ========== SCREEN: GUILD WORKSPACE ========== -->
+    <section id="screen-guild" class="screen screen-guild" data-screen="guild" hidden>
+      <aside class="sidebar" id="sidebar">
+        <a class="brand compact" href="#/servers"><span class="brand-mark sm"></span><span class="brand-name">Ops</span></a>
+        <div class="side-guild">
           <span class="sg-icon" id="side-guild-icon">S</span>
           <div>
             <strong id="side-guild-name">—</strong>
-            <button type="button" class="linkish" id="btn-change-server">تغيير السيرفر</button>
+            <a class="link" href="#/servers">تغيير السيرفر</a>
           </div>
         </div>
-        <nav class="side-nav" aria-label="وحدات السيرفر">
-          <button type="button" class="side-item is-active" data-mod="overview"><span>◈</span> نظرة عامة</button>
-          <button type="button" class="side-item" data-mod="tickets"><span>▣</span> التذاكر</button>
-          <button type="button" class="side-item" data-mod="panel"><span>✦</span> المنبر</button>
-          <button type="button" class="side-item is-hot" data-mod="roles"><span>♛</span> الرتب والصلاحيات</button>
-          <button type="button" class="side-item" data-mod="smart"><span>◎</span> الإعدادات الذكية</button>
-          <button type="button" class="side-item" data-mod="audit"><span>☰</span> السجل</button>
+        <nav class="side-nav" aria-label="وحدات">
+          <a class="side-link" data-mod="overview" href="#"><span>◈</span> نظرة عامة</a>
+          <a class="side-link" data-mod="tickets" href="#"><span>▣</span> التذاكر</a>
+          <a class="side-link" data-mod="panel" href="#"><span>✦</span> المنبر</a>
+          <a class="side-link" data-mod="roles" href="#"><span>♛</span> الرتب</a>
+          <a class="side-link" data-mod="smart" href="#"><span>◎</span> الذكي</a>
+          <a class="side-link" data-mod="logs" href="#"><span>☰</span> السجل</a>
         </nav>
-        <button type="button" class="side-back" id="side-toggle-mobile" aria-label="القائمة">القائمة</button>
+        <button type="button" class="btn btn-ghost btn-sm side-logout" id="btn-logout-side">خروج</button>
       </aside>
 
-      <div class="dash-main">
-        <header class="mod-top">
-          <button type="button" class="btn btn-ghost btn-sm mobile-only" id="btn-open-side">القائمة</button>
-          <h2 id="mod-title">نظرة عامة</h2>
+      <div class="workspace">
+        <header class="work-top">
+          <button type="button" class="btn btn-ghost btn-sm mobile-only" id="btn-side-open">القائمة</button>
+          <h1 id="mod-title">نظرة عامة</h1>
+          <span class="chip" id="guild-chip">—</span>
         </header>
 
-        <div id="mod-overview" class="mod is-active">
-          <div class="stat-row">
-            <article class="stat glass-card"><p>مفتوحة</p><strong id="st-open">12</strong></article>
-            <article class="stat glass-card"><p>مُستلمة</p><strong id="st-claimed">7</strong></article>
-            <article class="stat glass-card"><p>أُغلقت اليوم</p><strong id="st-closed">23</strong></article>
-            <article class="stat glass-card"><p>SLA</p><strong id="st-sla">94%</strong></article>
+        <!-- overview -->
+        <div class="mod" id="mod-overview" data-mod-panel="overview" hidden>
+          <div class="stat-grid">
+            <div class="stat glass"><p>مفتوحة</p><strong id="st-open">0</strong></div>
+            <div class="stat glass"><p>مُستلمة</p><strong id="st-claimed">0</strong></div>
+            <div class="stat glass"><p>أُغلقت اليوم</p><strong id="st-closed">0</strong></div>
+            <div class="stat glass"><p>SLA</p><strong id="st-sla">—</strong></div>
           </div>
           <div class="two-col">
-            <article class="panel glass-card">
-              <h3>حالة السيرفر</h3>
-              <dl class="meta">
-                <div><dt>البوت</dt><dd id="ov-bot">متصل</dd></div>
-                <div><dt>الوضع الذكي</dt><dd id="ov-smart">مفعّل</dd></div>
-                <div><dt>صلاحيتك</dt><dd id="ov-perm">مالك السيرفر (Owner)</dd></div>
+            <article class="panel glass">
+              <h2>حالة السيرفر</h2>
+              <dl class="kv">
+                <div><dt>البوت</dt><dd id="ov-bot">—</dd></div>
+                <div><dt>الذكي</dt><dd id="ov-smart">—</dd></div>
+                <div><dt>صلاحيتك</dt><dd>مالك (Owner)</dd></div>
               </dl>
-              <div class="row-actions">
-                <button type="button" class="btn btn-gradient btn-sm" data-goto="roles">الرتب الإدارية</button>
-                <button type="button" class="btn btn-ghost btn-sm" data-goto="panel">المنبر</button>
+              <div class="row-btns">
+                <a class="btn btn-grad btn-sm" data-mod="roles" href="#">الرتب</a>
+                <a class="btn btn-ghost btn-sm" data-mod="panel" href="#">المنبر</a>
               </div>
             </article>
-            <article class="panel glass-card">
-              <h3>آخر النشاط</h3>
+            <article class="panel glass">
+              <h2>آخر النشاط</h2>
               <ul class="feed" id="ov-feed"></ul>
             </article>
           </div>
         </div>
 
-        <div id="mod-tickets" class="mod" hidden>
+        <!-- tickets -->
+        <div class="mod" id="mod-tickets" data-mod-panel="tickets" hidden>
           <div class="toolbar">
-            <div class="chips" id="ticket-filters">
-              <button type="button" class="chip is-active" data-f="all">الكل</button>
-              <button type="button" class="chip" data-f="open">مفتوحة</button>
-              <button type="button" class="chip" data-f="claimed">مُستلمة</button>
-              <button type="button" class="chip" data-f="closed">مغلقة</button>
+            <div class="filters" id="ticket-filters">
+              <button type="button" class="chip-btn is-on" data-f="all">الكل</button>
+              <button type="button" class="chip-btn" data-f="open">مفتوحة</button>
+              <button type="button" class="chip-btn" data-f="claimed">مُستلمة</button>
+              <button type="button" class="chip-btn" data-f="closed">مغلقة</button>
             </div>
-            <input type="search" id="ticket-q" class="search" placeholder="بحث…" />
+            <input type="search" id="ticket-q" class="input" placeholder="بحث برقم أو فئة…" />
           </div>
-          <div class="table-wrap glass-card">
-            <table class="data-table"><thead><tr><th>المعرّف</th><th>الفئة</th><th>الأولوية</th><th>الحالة</th><th>المسؤول</th><th>منذ</th></tr></thead><tbody id="tickets-body"></tbody></table>
+          <div class="table-card glass">
+            <table class="table">
+              <thead><tr><th>ID</th><th>الفئة</th><th>الأولوية</th><th>الحالة</th><th>المسؤول</th><th>منذ</th><th></th></tr></thead>
+              <tbody id="tickets-body"></tbody>
+            </table>
           </div>
-          <div class="card-list" id="tickets-cards"></div>
         </div>
 
-        <div id="mod-panel" class="mod" hidden>
-          <article class="panel glass-card">
-            <p class="product-note"><strong>مظهر الـ Embed الفاخر</strong> يتكفّل به البوت (premium). من Ops: العنوان، اللون البنفسجي المتدرج، الترحيب، القناة، والتصنيفات.</p>
-            <form id="form-panel" class="form-grid">
-              <label class="field"><span>عنوان المنبر</span><input id="cfg-title" type="text" /></label>
-              <label class="field"><span>لون متدرج</span><div class="color-line"><input id="cfg-color" type="color" value="#7C3AED" /><input id="cfg-hex" class="en" dir="ltr" type="text" value="#7C3AED" /></div></label>
-              <label class="field"><span>قناة المنبر</span><input id="cfg-channel" class="en" dir="ltr" type="text" placeholder="Channel ID" /></label>
-              <label class="field"><span>فئة التذاكر</span><input id="cfg-category" class="en" dir="ltr" type="text" placeholder="Category ID" /></label>
-              <label class="field full"><span>الوصف</span><textarea id="cfg-desc" rows="2"></textarea></label>
-              <label class="field full"><span>نص الترحيب</span><textarea id="cfg-welcome" rows="2"></textarea></label>
-              <div class="grad-preview" id="grad-preview">معاينة بنفسجية متدرجة</div>
-              <div class="form-actions full"><button type="submit" class="btn btn-gradient">حفظ المنبر</button></div>
+        <!-- panel -->
+        <div class="mod" id="mod-panel" data-mod-panel="panel" hidden>
+          <article class="panel glass dense">
+            <p class="note">مظهر الـ Embed الفاخر من البوت. هنا تضبط المحتوى وتنشر المنبر.</p>
+            <form id="form-panel" class="form-dense">
+              <label class="field"><span>عنوان المنبر</span><input id="cfg-title" class="input" type="text" /></label>
+              <label class="field"><span>اللون</span>
+                <div class="color-row">
+                  <input id="cfg-color" type="color" value="#7C3AED" />
+                  <input id="cfg-hex" class="input en" dir="ltr" type="text" value="#7C3AED" />
+                </div>
+              </label>
+              <label class="field"><span>قناة المنبر (ID)</span><input id="cfg-channel" class="input en" dir="ltr" placeholder="Channel ID" /></label>
+              <label class="field"><span>فئة التذاكر (ID)</span><input id="cfg-category" class="input en" dir="ltr" placeholder="Category ID" /></label>
+              <label class="field full"><span>الوصف</span><textarea id="cfg-desc" class="input" rows="2"></textarea></label>
+              <label class="field full"><span>ترحيب التذكرة</span><textarea id="cfg-welcome" class="input" rows="2"></textarea></label>
+              <div class="grad-bar" id="grad-preview">معاينة اللون</div>
+              <div class="form-actions full">
+                <button type="submit" class="btn btn-ghost">حفظ الإعدادات</button>
+                <button type="button" class="btn btn-grad" id="btn-publish-panel">نشر المنبر للقناة</button>
+              </div>
             </form>
           </article>
-          <article class="panel glass-card mt">
-            <header class="panel-h"><h3>التصنيفات</h3><button type="button" class="btn btn-ghost btn-sm" id="btn-add-cat">+ تصنيف</button></header>
+          <article class="panel glass dense">
+            <header class="panel-h"><h2>التصنيفات</h2><button type="button" class="btn btn-ghost btn-sm" id="btn-add-cat">+ تصنيف</button></header>
             <ul class="cat-list" id="cat-list"></ul>
           </article>
         </div>
 
-        <div id="mod-roles" class="mod" hidden>
-          <article class="panel glass-card">
-            <div class="roles-banner">
-              <h3>الرتب الإدارية — الشاشة الأساسية</h3>
-              <p>الرتب تُضبط في <strong>Ops فقط</strong> لكل سيرفر. البوت يقرأها من الـ API — بلا واجهة رتب داخل البوت.</p>
+        <!-- roles -->
+        <div class="mod" id="mod-roles" data-mod-panel="roles" hidden>
+          <article class="panel glass dense">
+            <div class="roles-hero">
+              <h2>الرتب — الشاشة الأساسية</h2>
+              <p>تُضبط هنا فقط لكل سيرفر. البوت يقرأها من الـ API.</p>
             </div>
-            <div class="ref-roles">
-              <div class="ref-card"><span>مرجع جابر · أونر</span><code class="en" dir="ltr">1550192474645856286</code><button type="button" class="btn btn-ghost btn-sm copy-btn" data-copy="1550192474645856286">نسخ</button></div>
-              <div class="ref-card"><span>مرجع جابر · عضو</span><code class="en" dir="ltr">1550192307481874462</code><button type="button" class="btn btn-ghost btn-sm copy-btn" data-copy="1550192307481874462">نسخ</button></div>
+            <div class="ref-row">
+              <div class="ref"><span>مرجع جابر · أونر</span><code dir="ltr">1550192474645856286</code><button type="button" class="btn btn-ghost btn-sm" data-copy="1550192474645856286">نسخ</button></div>
+              <div class="ref"><span>مرجع جابر · عضو</span><code dir="ltr">1550192307481874462</code><button type="button" class="btn btn-ghost btn-sm" data-copy="1550192307481874462">نسخ</button></div>
             </div>
-            <form id="form-roles" class="form-grid mt">
-              <label class="field"><span>رتبة المالك</span><input id="role-owner" class="en" dir="ltr" type="text" placeholder="Owner Role ID" /></label>
-              <label class="field"><span>رتبة العضو</span><input id="role-member" class="en" dir="ltr" type="text" placeholder="Member Role ID" /></label>
-              <label class="field"><span>رتبة الدعم</span><input id="role-support" class="en" dir="ltr" type="text" placeholder="Support Role ID" /></label>
-              <label class="field"><span>رتبة الإدارة</span><input id="role-admin" class="en" dir="ltr" type="text" placeholder="Admin Role ID" /></label>
-              <div class="form-actions full"><button type="submit" class="btn btn-gradient">حفظ الرتب</button></div>
+            <form id="form-roles" class="form-dense">
+              <label class="field"><span>رتبة المالك</span><input id="role-owner" class="input en" dir="ltr" placeholder="Owner Role ID" /></label>
+              <label class="field"><span>رتبة العضو</span><input id="role-member" class="input en" dir="ltr" placeholder="Member Role ID" /></label>
+              <label class="field"><span>رتبة الدعم</span><input id="role-support" class="input en" dir="ltr" placeholder="Support Role ID" /></label>
+              <label class="field"><span>رتبة الإدارة</span><input id="role-admin" class="input en" dir="ltr" placeholder="Admin Role ID" /></label>
+              <div class="form-actions full"><button type="submit" class="btn btn-grad">حفظ الرتب</button></div>
             </form>
-            <h3 class="subh">صلاحيات الأوامر والأزرار</h3>
-            <div class="table-wrap">
-              <table class="data-table perm-table">
+            <h3 class="sub">صلاحيات الأوامر والأزرار</h3>
+            <div class="table-card">
+              <table class="table">
                 <thead><tr><th>العنصر</th><th>الجميع</th><th>أعضاء</th><th>دعم</th><th>أدمن</th></tr></thead>
                 <tbody id="perm-body"></tbody>
               </table>
             </div>
-            <div class="form-actions"><button type="button" class="btn btn-ghost" id="btn-save-perms">حفظ الصلاحيات</button></div>
+            <button type="button" class="btn btn-ghost" id="btn-save-perms">حفظ الصلاحيات</button>
           </article>
         </div>
 
-        <div id="mod-smart" class="mod" hidden>
-          <article class="panel glass-card">
-            <form id="form-smart">
+        <!-- smart -->
+        <div class="mod" id="mod-smart" data-mod-panel="smart" hidden>
+          <article class="panel glass dense">
+            <form id="form-smart" class="form-dense">
               <div class="toggle-grid">
-                <label class="t-card"><input type="checkbox" id="sm-auto" checked /><span><strong>رد تلقائي</strong><small>عند فتح تذكرة</small></span></label>
-                <label class="t-card"><input type="checkbox" id="sm-suggest" checked /><span><strong>اقتراح فئة</strong><small>من نص العضو</small></span></label>
-                <label class="t-card"><input type="checkbox" id="sm-one" checked /><span><strong>تذكرة واحدة</strong><small>لكل عضو</small></span></label>
-                <label class="t-card"><input type="checkbox" id="sm-idle" checked /><span><strong>تحذير خمول</strong><small>تنبيه عدم الرد</small></span></label>
-                <label class="t-card"><input type="checkbox" id="sm-close" checked /><span><strong>إغلاق تلقائي</strong><small>بعد الخمول</small></span></label>
-                <label class="t-card"><input type="checkbox" id="sm-sla" checked /><span><strong>مراقبة SLA</strong><small>مهلة الرد</small></span></label>
+                <label class="toggle"><input type="checkbox" id="sm-auto" checked /><span><strong>رد تلقائي</strong><small>عند فتح تذكرة</small></span></label>
+                <label class="toggle"><input type="checkbox" id="sm-suggest" checked /><span><strong>اقتراح فئة</strong><small>من نص العضو</small></span></label>
+                <label class="toggle"><input type="checkbox" id="sm-one" checked /><span><strong>تذكرة واحدة</strong><small>لكل عضو</small></span></label>
+                <label class="toggle"><input type="checkbox" id="sm-idle" checked /><span><strong>تحذير خمول</strong><small>تنبيه عدم الرد</small></span></label>
+                <label class="toggle"><input type="checkbox" id="sm-close" checked /><span><strong>إغلاق تلقائي</strong><small>بعد الخمول</small></span></label>
+                <label class="toggle"><input type="checkbox" id="sm-sla" checked /><span><strong>مراقبة SLA</strong><small>مهلة الرد الأول</small></span></label>
               </div>
-              <div class="form-grid mt">
-                <label class="field"><span>تحذير خمول (د)</span><input type="number" id="sm-idle-min" value="30" min="1" /></label>
-                <label class="field"><span>إغلاق تلقائي (د)</span><input type="number" id="sm-close-min" value="120" min="1" /></label>
-                <label class="field"><span>هدف SLA (د)</span><input type="number" id="sm-sla-min" value="15" min="1" /></label>
-                <label class="field"><span>أولوية افتراضية</span>
-                  <select id="sm-prio"><option value="low">منخفضة</option><option value="medium" selected>متوسطة</option><option value="high">عالية</option></select>
-                </label>
-              </div>
-              <div class="form-actions"><button type="submit" class="btn btn-gradient">حفظ الإعدادات الذكية</button></div>
+              <label class="field"><span>تحذير خمول (دقيقة)</span><input type="number" id="sm-idle-min" class="input" value="30" min="1" /></label>
+              <label class="field"><span>إغلاق تلقائي (دقيقة)</span><input type="number" id="sm-close-min" class="input" value="120" min="1" /></label>
+              <label class="field"><span>هدف SLA (دقيقة)</span><input type="number" id="sm-sla-min" class="input" value="15" min="1" /></label>
+              <label class="field"><span>أولوية افتراضية</span>
+                <select id="sm-prio" class="input"><option value="low">منخفضة</option><option value="medium" selected>متوسطة</option><option value="high">عالية</option></select>
+              </label>
+              <div class="form-actions full"><button type="submit" class="btn btn-grad">حفظ الإعدادات الذكية</button></div>
             </form>
           </article>
         </div>
 
-        <div id="mod-audit" class="mod" hidden>
-          <article class="panel glass-card">
-            <header class="panel-h"><h3>سجل التدقيق</h3><button type="button" class="btn btn-ghost btn-sm" id="btn-refresh-audit">تحديث</button></header>
+        <!-- logs -->
+        <div class="mod" id="mod-logs" data-mod-panel="logs" hidden>
+          <article class="panel glass dense">
+            <header class="panel-h"><h2>سجل التدقيق</h2><button type="button" class="btn btn-ghost btn-sm" id="btn-refresh-logs">تحديث</button></header>
             <ul class="audit" id="audit-list"></ul>
           </article>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- 403 -->
+    <section id="screen-forbidden" class="screen screen-forbidden" data-screen="forbidden" hidden>
+      <div class="forbidden glass">
+        <div class="code">403</div>
+        <h1>لا صلاحية</h1>
+        <p>الأونر فقط يقدر يعدّل إعدادات السيرفر في Ops.</p>
+        <a class="btn btn-grad" href="#/servers">العودة للسيرفرات</a>
+      </div>
+    </section>
   </div>
 
-  <div class="toast" id="toast" hidden role="status"></div>
+  <div id="toast" class="toast" hidden role="status"></div>
+  <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>

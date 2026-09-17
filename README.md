@@ -1,33 +1,34 @@
 # Ops
 
-لوحة تحكم عربية (RTL) متعددة السيرفرات لبوت تذاكر ديسكورد — طراز ProBot، بنفسجي متدرج.
+لوحة تحكم عربية (RTL) متعددة الشاشات لبوت تذاكر ديسكورد — طراز ProBot، بنفسجي متدرج.
 
 **Live:** https://gaber311a-lang.github.io/ops/
 
-## صلاحيات
+## شاشات منفصلة (hash)
 
-**الأونر فقط** يقدر يعدّل إعدادات السيرفر (ليس Admin / Manage Guild).
+| Hash | الشاشة |
+|------|--------|
+| `#/` | هبوط تسويقي فقط |
+| `#/login` | دخول Discord |
+| `#/servers` | شبكة السيرفرات |
+| `#/g/:id/overview` | نظرة عامة |
+| `#/g/:id/tickets` | التذاكر |
+| `#/g/:id/panel` | المنبر + نشر |
+| `#/g/:id/roles` | الرتب والصلاحيات |
+| `#/g/:id/smart` | الإعدادات الذكية |
+| `#/g/:id/logs` | السجل |
 
-## Frontend
-
-`config.js`:
+## API (Railway)
 
 ```js
-window.OPS_API_BASE = "https://aviation-board-charlie-hopefully.trycloudflare.com";
+window.OPS_API_BASE = "https://ticket-ops-api-production.up.railway.app";
 ```
 
-Login CTA → `${OPS_API_BASE}/auth/discord`
+- Login → `/auth/discord`
+- Invite → `/invite`
+- Guilds/settings/panel → `/api/guilds...`
 
-### Eng API contract
+**جابر:** أضف Redirect URI في Discord Portal:
+`https://ticket-ops-api-production.up.railway.app/auth/discord/callback`
 
-| Method | Path |
-|--------|------|
-| GET | `/health` `/invite` `/auth/discord` `/auth/discord/callback` `/auth/me` |
-| POST | `/auth/logout` |
-| GET | `/api/guilds` |
-| GET/PUT | `/api/guilds/:guildId/settings` |
-| POST | `/api/guilds/:guildId/panel` |
-
-Invite: `permissions=2147609616` · `scope=bot applications.commands`
-
-CORS يسمح بـ `*.github.io/ops`. Owner-only على settings.
+الأونر فقط يعدّل الإعدادات. أزرار العلامة التجارية بنفسجية متدرجة؛ أزرق Discord لزر الدخول/الدعوة فقط.
