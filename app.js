@@ -893,6 +893,8 @@
 
     $("btn-discord-login")?.addEventListener("click", loginDiscord);
     $("btn-hero-login")?.addEventListener("click", loginDiscord);
+    $("btn-nav-invite")?.addEventListener("click", (e) => { e.preventDefault(); inviteBot(); });
+    $("btn-hero-invite")?.addEventListener("click", (e) => { e.preventDefault(); inviteBot(); });
     $("btn-nav-login")?.addEventListener("click", loginDiscord);
     $("btn-logout")?.addEventListener("click", logout);
     $("btn-logout-side")?.addEventListener("click", logout);

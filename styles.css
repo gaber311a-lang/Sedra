@@ -572,3 +572,64 @@ body::before {
 .bento-card h3 { margin: 0 0 .4rem; color: #fff; font-size: 1.05rem; }
 .bento-card p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
 .mkt-nav .brand-name { font-weight: 800; letter-spacing: .02em; }
+
+
+/* Tokyo polish v7 — cleaner shell */
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1.1rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(14px);
+  background: rgba(11,11,20,.72);
+  border-bottom: 1px solid rgba(168,85,247,.18);
+}
+.topnav-links { display: none; margin-inline-start: auto; }
+@media (min-width: 720px) {
+  .topnav-links { display: flex; gap: 1rem; }
+  .topnav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; }
+}
+.topnav-actions { display: flex; gap: .5rem; margin-inline-start: auto; }
+@media (min-width: 720px) {
+  .topnav-actions { margin-inline-start: 0; }
+}
+.landing-body { min-height: calc(100dvh - 8rem); }
+.screen { min-height: 100dvh; }
+.server-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .85rem;
+  padding: 1rem;
+}
+.server-tile {
+  border-radius: 18px;
+  padding: 1rem .9rem;
+  background: rgba(22,22,35,.92);
+  border: 1px solid rgba(168,85,247,.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  text-align: center;
+}
+.server-tile.tile-add {
+  border-style: dashed;
+  color: #E9D5FF;
+  justify-content: center;
+  min-height: 180px;
+  cursor: pointer;
+}
+.server-icon-img, .server-icon {
+  width: 64px; height: 64px; border-radius: 16px;
+}
+.appbar {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .8rem 1rem;
+  border-bottom: 1px solid rgba(168,85,247,.18);
+  background: rgba(11,11,20,.85);
+  backdrop-filter: blur(12px);
+}
+.servers-head h1 { font-size: 1.35rem; margin: 0; }
